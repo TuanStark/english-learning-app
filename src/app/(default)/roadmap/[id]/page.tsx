@@ -33,7 +33,8 @@ import {
   BarChart3,
   Timer,
   Brain,
-  PenTool
+  PenTool,
+  Eye
 } from "lucide-react"
 import Link from "next/link"
 

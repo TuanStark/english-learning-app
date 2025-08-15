@@ -74,7 +74,7 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id
+        token.id =String(user.id)
         token.name = user.name
         token.email = user.email
         token.image = user.image
@@ -106,15 +106,6 @@ export const authConfig: NextAuthConfig = {
       return baseUrl
     }
   },
-  events: {
-    async signIn({ user, account, profile }) {
-      console.log("User signed in:", user.email)
-    },
-    async signOut({ session, token }) {
-      console.log("User signed out:", token?.email)
-    }
-  },
-  debug: process.env.NODE_ENV === "development",
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig)
