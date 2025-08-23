@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Mail, Lock, User, Chrome, Facebook, AlertCircle, CheckCircle } from "lucide-react"
+import { authApi, ApiError } from "@/lib/api"
 
 function AuthContent() {
   const [isLoading, setIsLoading] = useState(false)
@@ -18,7 +19,7 @@ function AuthContent() {
   const [success, setSuccess] = useState("")
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+  const callbackUrl = searchParams.get("callbackUrl") || "/"
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -28,7 +29,7 @@ function AuthContent() {
 
   // Register form state
   const [registerData, setRegisterData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: ""
@@ -86,19 +87,46 @@ function AuthContent() {
     }
 
     try {
-      // In a real app, you would call your registration API here
-      // For demo purposes, we'll just show success
+      console.log("registerData", registerData)
+      
+      // Prepare data for API - remove confirmPassword and ensure proper field names
+      const apiData = {
+        fullName: registerData.fullName,
+        email: registerData.email,
+        password: registerData.password
+      }
+      
+      const result = await authApi.register(apiData)
+      console.log("Registration result:", result)
+      
       setSuccess("Đăng ký thành công! Vui lòng đăng nhập.")
       
       // Reset form
       setRegisterData({
-        name: "",
+        fullName: "",
         email: "",
         password: "",
         confirmPassword: ""
       })
     } catch (error) {
-      setError("Có lỗi xảy ra. Vui lòng thử lại.")
+      console.error('Registration error:', error)
+      
+      if (error instanceof ApiError) {
+        if (error.status === 400) {
+          if (error.errors) {
+            const errorMessages = Object.values(error.errors).flat()
+            setError(`Lỗi validation: ${errorMessages.join(', ')}`)
+          } else {
+            setError(`Lỗi đăng ký: ${error.message}`)
+          }
+        } else if (error.status === 409) {
+          setError("Email đã tồn tại. Vui lòng sử dụng email khác.")
+        } else {
+          setError(`Lỗi đăng ký: ${error.message}`)
+        }
+      } else {
+        setError("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -159,7 +187,7 @@ function AuthContent() {
                       <Input
                         id="login-email"
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder="Nhập email của bạn"
                         className="pl-10"
                         value={loginData.email}
                         onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
@@ -195,31 +223,21 @@ function AuthContent() {
                     {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
                   </Button>
                 </form>
-
-                {/* Demo credentials */}
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm font-medium text-blue-800 mb-2">Tài khoản demo:</p>
-                  <div className="text-xs text-blue-700 space-y-1">
-                    <div>👨‍🎓 Student: demo@example.com / demo123</div>
-                    <div>👨‍🏫 Teacher: teacher@englishpro.com / teacher123</div>
-                    <div>👨‍💼 Admin: admin@englishpro.com / admin123</div>
-                  </div>
-                </div>
               </TabsContent>
 
               <TabsContent value="register" className="space-y-4">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="register-name">Họ và tên</Label>
+                    <Label htmlFor="register-fullName">Họ và tên</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
-                        id="register-name"
+                        id="register-fullName"
                         type="text"
-                        placeholder="Nguyễn Văn A"
+                        placeholder="Nhập họ và tên"
                         className="pl-10"
-                        value={registerData.name}
-                        onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                        value={registerData.fullName}
+                        onChange={(e) => setRegisterData({ ...registerData, fullName: e.target.value })}
                         required
                       />
                     </div>
@@ -232,7 +250,7 @@ function AuthContent() {
                       <Input
                         id="register-email"
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder="Nhập email của bạn"
                         className="pl-10"
                         value={registerData.email}
                         onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
