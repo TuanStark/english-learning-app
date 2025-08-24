@@ -35,7 +35,7 @@ import Link from "next/link"
 
 export default function CourseDetailPage() {
   const params = useParams()
-  const courseId = params.id
+  const courseId = params?.id as string
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
 

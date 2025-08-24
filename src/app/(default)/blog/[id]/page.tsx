@@ -31,7 +31,7 @@ import Link from "next/link"
 
 export default function BlogDetailPage() {
   const params = useParams()
-  const postId = params.id
+  const postId = params?.id as string
   const [isLiked, setIsLiked] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
 
