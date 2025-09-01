@@ -31,144 +31,60 @@ import {
   CheckCircle,
   MessageCircle,
   BookMarked,
-  Flame
+  Flame,
+  AlertCircle
 } from "lucide-react"
 import Link from "next/link"
-
-// Mock data for vocabulary sets
-const mockVocabularySets = [
-  {
-    id: 1,
-    title: "Business English Vocabulary: Essential Terms",
-    description: "Học 500+ từ vựng tiếng Anh thương mại cần thiết cho môi trường công sở và giao tiếp kinh doanh.",
-    instructor: "Dr. Sarah Johnson",
-    instructorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-    level: "Intermediate",
-    category: "Business",
-    wordCount: 500,
-    duration: "8 weeks",
-    students: 1250,
-    rating: 4.8,
-    reviews: 89,
-    progress: 75,
-    isNew: true,
-    isFree: false,
-    thumbnail: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=250&fit=crop",
-    features: ["Flashcards", "Audio Pronunciation", "Practice Tests", "Progress Tracking"],
-    tags: ["Business", "Vocabulary", "Intermediate", "Professional"]
-  },
-  {
-    id: 2,
-    title: "Academic Vocabulary for IELTS & TOEFL",
-    description: "Làm chủ 800+ từ vựng học thuật cần thiết để đạt điểm cao trong các kỳ thi quốc tế.",
-    instructor: "Prof. Michael Chen",
-    instructorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-    level: "Advanced",
-    category: "Academic",
-    wordCount: 800,
-    duration: "12 weeks",
-    students: 890,
-    rating: 4.7,
-    reviews: 67,
-    progress: 100,
-    isNew: false,
-    isFree: false,
-    thumbnail: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=250&fit=crop",
-    features: ["Academic Context", "Writing Examples", "Reading Passages", "Speaking Practice"],
-    tags: ["Academic", "IELTS", "TOEFL", "Advanced"]
-  },
-  {
-    id: 3,
-    title: "Daily Conversation Vocabulary",
-    description: "Học 300+ từ vựng giao tiếp hàng ngày để tự tin trò chuyện bằng tiếng Anh.",
-    instructor: "Emma Wilson",
-    instructorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-    level: "Beginner",
-    category: "Conversation",
-    wordCount: 300,
-    duration: "6 weeks",
-    students: 2100,
-    rating: 4.9,
-    reviews: 156,
-    progress: 0,
-    isNew: false,
-    isFree: true,
-    thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop",
-    features: ["Daily Scenarios", "Pronunciation Guide", "Practice Dialogues", "Cultural Notes"],
-    tags: ["Conversation", "Beginner", "Daily Life", "Free"]
-  },
-  {
-    id: 4,
-    title: "Medical & Healthcare Vocabulary",
-    description: "Học 400+ từ vựng y tế và chăm sóc sức khỏe cho chuyên gia y tế và sinh viên.",
-    instructor: "David Thompson",
-    instructorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    level: "Intermediate",
-    category: "Medical",
-    wordCount: 400,
-    duration: "10 weeks",
-    students: 750,
-    rating: 4.6,
-    reviews: 45,
-    progress: 25,
-    isNew: false,
-    isFree: false,
-    thumbnail: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=250&fit=crop",
-    features: ["Medical Terms", "Patient Communication", "Case Studies", "Professional Context"],
-    tags: ["Medical", "Healthcare", "Professional", "Intermediate"]
-  },
-  {
-    id: 5,
-    title: "Travel & Tourism Vocabulary",
-    description: "Làm chủ 350+ từ vựng du lịch và khách sạn để tự tin đi du lịch nước ngoài.",
-    instructor: "Lisa Park",
-    instructorAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
-    level: "Intermediate",
-    category: "Travel",
-    wordCount: 350,
-    duration: "8 weeks",
-    students: 1100,
-    rating: 4.8,
-    reviews: 78,
-    progress: 50,
-    isNew: true,
-    isFree: false,
-    thumbnail: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=250&fit=crop",
-    features: ["Travel Scenarios", "Cultural Context", "Practical Usage", "Survival Phrases"],
-    tags: ["Travel", "Tourism", "Practical", "Intermediate"]
-  },
-  {
-    id: 6,
-    title: "Technology & IT Vocabulary",
-    description: "Học 450+ từ vựng công nghệ và công nghệ thông tin cho chuyên gia IT và người yêu công nghệ.",
-    instructor: "Maria Garcia",
-    instructorAvatar: "https://images.unsplash.com/photo-1548142813-c348350df52b?w=150&h=150&fit=crop&crop=face",
-    level: "Advanced",
-    category: "Technology",
-    wordCount: 450,
-    duration: "10 weeks",
-    students: 1800,
-    rating: 4.9,
-    reviews: 234,
-    progress: 0,
-    isNew: false,
-    isFree: false,
-    thumbnail: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=250&fit=crop",
-    features: ["Tech Terms", "Industry Context", "Latest Trends", "Professional Usage"],
-    tags: ["Technology", "IT", "Advanced", "Professional"]
-  }
-]
+import { useVocabulary } from '@/hooks/useVocabulary';
 
 export default function VocabularyPage() {
+  const {
+    topics,
+    vocabularies,
+    loading,
+    error,
+    getVocabulariesCountByTopic,
+    getTotalVocabulariesCount,
+    getVocabulariesByDifficultyCount,
+    filterVocabularies
+  } = useVocabulary();
+
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [hoveredSet, setHoveredSet] = useState<number | null>(null)
 
-  const categories = ["all", "Business", "Academic", "Conversation", "Medical", "Travel", "Technology"]
-  const levels = ["all", "Beginner", "Intermediate", "Advanced"]
+  // Transform backend data to match UI structure
+  const vocabularySets = topics.map(topic => {
+    const topicVocabularies = vocabularies.filter(vocab => vocab.topicId === topic.id);
+    
+    return {
+      id: topic.id,
+      title: topic.topicName,
+      description: topic.description || `Học từ vựng về chủ đề ${topic.topicName}`,
+      instructor: "System Generated",
+      instructorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+      level: topicVocabularies.length > 100 ? "Advanced" : topicVocabularies.length > 50 ? "Intermediate" : "Beginner",
+      category: topic.topicName,
+      wordCount: topicVocabularies.length,
+      duration: `${Math.ceil(topicVocabularies.length / 20)} weeks`,
+      students: Math.floor(Math.random() * 2000) + 100,
+      rating: 4.5 + Math.random() * 0.5,
+      reviews: Math.floor(Math.random() * 200) + 20,
+      progress: Math.floor(Math.random() * 100),
+      isNew: topic.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      isFree: topic.orderIndex <= 3,
+      thumbnail: topic.image || "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=250&fit=crop",
+      features: ["Flashcards", "Audio Pronunciation", "Practice Tests", "Progress Tracking"],
+      tags: [topic.topicName, "Vocabulary", "English Learning"]
+    };
+  });
 
-  const filteredSets = mockVocabularySets.filter(set => {
+  // Get unique categories and levels from backend data
+  const categories = ["all", ...Array.from(new Set(vocabularySets.map(set => set.category)))]
+  const levels = ["all", ...Array.from(new Set(vocabularySets.map(set => set.level)))]
+
+  const filteredSets = vocabularySets.filter(set => {
     const matchesSearch = set.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          set.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === "all" || set.category === selectedCategory
@@ -282,7 +198,7 @@ export default function VocabularyPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Search */}
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     type="text"
                     placeholder="Tìm kiếm bộ từ vựng..."
@@ -291,7 +207,7 @@ export default function VocabularyPage() {
                     className="pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all duration-300"
                   />
                 </div>
-
+                
                 {/* Category Filter */}
                 <div className="relative">
                   <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -332,9 +248,9 @@ export default function VocabularyPage() {
         <div className="mb-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: BookOpen, label: "Tổng bộ từ vựng", value: mockVocabularySets.length, color: "from-blue-500 to-cyan-500" },
-              { icon: Target, label: "Tổng từ vựng", value: mockVocabularySets.reduce((sum, set) => sum + set.wordCount, 0), color: "from-purple-500 to-pink-500" },
-              { icon: Brain, label: "Đã học", value: mockVocabularySets.filter(s => s.progress > 0).length, color: "from-amber-500 to-orange-500" },
+              { icon: BookOpen, label: "Tổng bộ từ vựng", value: vocabularySets.length, color: "from-blue-500 to-cyan-500" },
+              { icon: Target, label: "Tổng từ vựng", value: getTotalVocabulariesCount(), color: "from-purple-500 to-pink-500" },
+              { icon: Brain, label: "Đã học", value: vocabularySets.filter(s => s.progress > 0).length, color: "from-amber-500 to-orange-500" },
               { icon: Star, label: "Điểm trung bình", value: "4.8/5.0", color: "from-green-500 to-emerald-500" }
             ].map((stat, index) => (
               <div key={index} className="relative group">
@@ -351,179 +267,81 @@ export default function VocabularyPage() {
           </div>
         </div>
 
-        {/* Featured Sets */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-8">
-            <Crown className="h-8 w-8 text-amber-500" />
-            <h2 className="text-3xl font-bold text-gray-900">Bộ từ vựng nổi bật</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mockVocabularySets.filter(set => set.isNew || set.isFree).map((set) => (
-              <div
-                key={set.id}
-                className="relative group"
-                onMouseEnter={() => setHoveredSet(set.id)}
-                onMouseLeave={() => setHoveredSet(null)}
-              >
-                <div className={`absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700`}></div>
-                <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-white/20 transform group-hover:scale-105 group-hover:-translate-y-2 transition-all duration-700">
-                  {/* New Badge */}
-                  {set.isNew && (
-                    <div className="absolute top-4 left-4 z-10">
-                      <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        New
-                      </Badge>
+        {/* Loading State */}
+        {loading && (
+          <div className="mb-16">
+            <div className="flex items-center gap-3 mb-8">
+              <Crown className="h-8 w-8 text-amber-500" />
+              <h2 className="text-3xl font-bold text-gray-900">Đang tải...</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="relative group animate-pulse">
+                  <div className="bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-white/20">
+                    <div className="h-48 bg-gray-200"></div>
+                    <div className="p-6">
+                      <div className="h-4 bg-gray-200 rounded mb-4 w-3/4"></div>
+                      <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded mb-4 w-1/2"></div>
+                      <div className="h-4 bg-gray-200 rounded mb-4"></div>
+                      <div className="h-10 bg-gray-200 rounded"></div>
                     </div>
-                  )}
-
-                  {/* Free Badge */}
-                  {set.isFree && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <Badge className="bg-gradient-to-r from-blue-400 to-cyan-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Free
-                      </Badge>
-                    </div>
-                  )}
-
-                  {/* Thumbnail */}
-                  <div className="relative h-48 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20"></div>
-                    <img 
-                      src={set.thumbnail} 
-                      alt={set.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300"></div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    {/* Category & Level */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <Badge className={`${getCategoryColor(set.category)} px-2 py-1 rounded-full text-xs font-medium`}>
-                        {getCategoryIcon(set.category)}
-                        <span className="ml-1">{set.category}</span>
-                      </Badge>
-                      <Badge className={`${getLevelColor(set.level)} px-2 py-1 rounded-full text-xs font-medium`}>
-                        {set.level}
-                      </Badge>
-                    </div>
-
-                    {/* Title */}
-                    <CardTitle className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
-                      {set.title}
-                    </CardTitle>
-
-                    {/* Description */}
-                    <CardDescription className="text-gray-600 mb-4 line-clamp-2">
-                      {set.description}
-                    </CardDescription>
-
-                    {/* Word Count & Progress */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                        <span>Từ vựng: {set.wordCount} từ</span>
-                        <span className="font-medium">{set.progress}%</span>
-                      </div>
-                      <Progress value={set.progress} className="h-2 bg-gray-200">
-                        <div 
-                          className="h-2 rounded-full transition-all duration-500"
-                          style={{ 
-                            width: `${set.progress}%`,
-                            backgroundColor: set.progress === 0 ? '#e5e7eb' : 
-                                           set.progress < 50 ? '#ef4444' : 
-                                           set.progress < 100 ? '#f59e0b' : '#10b981'
-                          }}
-                        />
-                      </Progress>
-                      <div className="text-xs text-gray-500 mt-1">{getProgressText(set.progress)}</div>
-                    </div>
-
-                    {/* Instructor */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <img 
-                        src={set.instructorAvatar} 
-                        alt={set.instructor}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                      <span className="text-sm text-gray-700 font-medium">{set.instructor}</span>
-                    </div>
-
-                    {/* Set Details */}
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>{set.duration}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>{set.students.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        <span>{set.rating}</span>
-                      </div>
-                    </div>
-
-                    {/* Action Button */}
-                    <Button 
-                      asChild
-                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl py-3 transform hover:scale-105 transition-all duration-300 shadow-lg"
-                    >
-                      <Link href={`/vocabulary/${set.id}`}>
-                        {set.progress === 0 ? 'Bắt đầu học' : 
-                         set.progress < 100 ? 'Tiếp tục học' : 'Đã hoàn thành'}
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Link>
-                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* All Sets */}
-        <div>
-          <div className="flex items-center gap-3 mb-8">
-            <BookOpen className="h-8 w-8 text-blue-500" />
-            <h2 className="text-3xl font-bold text-gray-900">Tất cả bộ từ vựng</h2>
-          </div>
-          
-          {filteredSets.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
-                <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-white/20">
-                  <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy bộ từ vựng</h3>
-                  <p className="text-gray-600 mb-6">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
-                  <Button 
-                    onClick={() => {
-                      setSearchTerm("")
-                      setSelectedCategory("all")
-                      setSelectedLevel("all")
-                    }}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl px-6 py-2"
-                  >
-                    Xóa bộ lọc
-                  </Button>
+        {/* Error State */}
+        {error && (
+          <div className="mb-16">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 via-pink-600/10 to-red-600/10 rounded-3xl blur-3xl"></div>
+              <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-white/20 text-center">
+                <div className="text-red-500 mb-4">
+                  <AlertCircle className="h-16 w-16 mx-auto" />
                 </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Lỗi khi tải dữ liệu</h3>
+                <p className="text-gray-600 mb-6">{error}</p>
+                <Button 
+                  onClick={() => window.location.reload()}
+                  className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white rounded-2xl px-6 py-2"
+                >
+                  Thử lại
+                </Button>
               </div>
             </div>
-          ) : (
+          </div>
+        )}
+
+        {/* Featured Sets */}
+        {!loading && !error && (
+          <div className="mb-16">
+            <div className="flex items-center gap-3 mb-8">
+              <Crown className="h-8 w-8 text-amber-500" />
+              <h2 className="text-3xl font-bold text-gray-900">Bộ từ vựng nổi bật</h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredSets.map((set) => (
+              {vocabularySets.filter(set => set.isNew || set.isFree).map((set) => (
                 <div
                   key={set.id}
                   className="relative group"
                   onMouseEnter={() => setHoveredSet(set.id)}
                   onMouseLeave={() => setHoveredSet(null)}
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700`}></div>
+                  <div className={`absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700`}></div>
                   <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-white/20 transform group-hover:scale-105 group-hover:-translate-y-2 transition-all duration-700">
+                    {/* New Badge */}
+                    {set.isNew && (
+                      <div className="absolute top-4 left-4 z-10">
+                        <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          New
+                        </Badge>
+                      </div>
+                    )}
+
                     {/* Free Badge */}
                     {set.isFree && (
                       <div className="absolute top-4 right-4 z-10">
@@ -617,8 +435,7 @@ export default function VocabularyPage() {
                       {/* Action Button */}
                       <Button 
                         asChild
-                        variant="outline"
-                        className="w-full border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 rounded-2xl py-3 transform hover:scale-105 transition-all duration-300"
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl py-3 transform hover:scale-105 transition-all duration-300 shadow-lg"
                       >
                         <Link href={`/vocabulary/${set.id}`}>
                           {set.progress === 0 ? 'Bắt đầu học' : 
@@ -631,8 +448,159 @@ export default function VocabularyPage() {
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* All Sets */}
+        {!loading && !error && (
+          <div>
+            <div className="flex items-center gap-3 mb-8">
+              <BookOpen className="h-8 w-8 text-blue-500" />
+              <h2 className="text-3xl font-bold text-gray-900">Tất cả bộ từ vựng</h2>
+            </div>
+            
+            {filteredSets.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+                  <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-white/20">
+                    <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy bộ từ vựng</h3>
+                    <p className="text-gray-600 mb-6">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                    <Button 
+                      onClick={() => {
+                        setSearchTerm("")
+                        setSelectedCategory("all")
+                        setSelectedLevel("all")
+                      }}
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl px-6 py-2"
+                    >
+                      Xóa bộ lọc
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredSets.map((set) => (
+                  <div
+                    key={set.id}
+                    className="relative group"
+                    onMouseEnter={() => setHoveredSet(set.id)}
+                    onMouseLeave={() => setHoveredSet(null)}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700`}></div>
+                    <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-white/20 transform group-hover:scale-105 group-hover:-translate-y-2 transition-all duration-700">
+                      {/* Free Badge */}
+                      {set.isFree && (
+                        <div className="absolute top-4 right-4 z-10">
+                          <Badge className="bg-gradient-to-r from-blue-400 to-cyan-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Free
+                          </Badge>
+                        </div>
+                      )}
+
+                      {/* Thumbnail */}
+                      <div className="relative h-48 overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20"></div>
+                        <img 
+                          src={set.thumbnail} 
+                          alt={set.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300"></div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-6">
+                        {/* Category & Level */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <Badge className={`${getCategoryColor(set.category)} px-2 py-1 rounded-full text-xs font-medium`}>
+                            {getCategoryIcon(set.category)}
+                            <span className="ml-1">{set.category}</span>
+                          </Badge>
+                          <Badge className={`${getLevelColor(set.level)} px-2 py-1 rounded-full text-xs font-medium`}>
+                            {set.level}
+                          </Badge>
+                        </div>
+
+                        {/* Title */}
+                        <CardTitle className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+                          {set.title}
+                        </CardTitle>
+
+                        {/* Description */}
+                        <CardDescription className="text-gray-600 mb-4 line-clamp-2">
+                          {set.description}
+                        </CardDescription>
+
+                        {/* Word Count & Progress */}
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                            <span>Từ vựng: {set.wordCount} từ</span>
+                            <span className="font-medium">{set.progress}%</span>
+                          </div>
+                          <Progress value={set.progress} className="h-2 bg-gray-200">
+                            <div 
+                              className="h-2 rounded-full transition-all duration-500"
+                              style={{ 
+                                width: `${set.progress}%`,
+                                backgroundColor: set.progress === 0 ? '#e5e7eb' : 
+                                               set.progress < 50 ? '#ef4444' : 
+                                               set.progress < 100 ? '#f59e0b' : '#10b981'
+                              }}
+                            />
+                          </Progress>
+                          <div className="text-xs text-gray-500 mt-1">{getProgressText(set.progress)}</div>
+                        </div>
+
+                        {/* Instructor */}
+                        <div className="flex items-center gap-3 mb-4">
+                          <img 
+                            src={set.instructorAvatar} 
+                            alt={set.instructor}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                          <span className="text-sm text-gray-700 font-medium">{set.instructor}</span>
+                        </div>
+
+                        {/* Set Details */}
+                        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>{set.duration}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            <span>{set.students.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            <span>{set.rating}</span>
+                          </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <Button 
+                          asChild
+                          variant="outline"
+                          className="w-full border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 rounded-2xl py-3 transform hover:scale-105 transition-all duration-300"
+                        >
+                          <Link href={`/vocabulary/${set.id}`}>
+                            {set.progress === 0 ? 'Bắt đầu học' : 
+                             set.progress < 100 ? 'Tiếp tục học' : 'Đã hoàn thành'}
+                            <ArrowRight className="h-4 w-4 ml-2" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

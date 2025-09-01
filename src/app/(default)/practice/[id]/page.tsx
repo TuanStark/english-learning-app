@@ -37,7 +37,7 @@ import Link from "next/link"
 
 export default function PracticeDetailPage() {
   const params = useParams()
-  const testId = params.id
+  const testId = params?.id
   const [hasStarted, setHasStarted] = useState(false)
 
   // Mock test data

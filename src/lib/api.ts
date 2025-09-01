@@ -1,120 +1,345 @@
-const API_BASE_URL = "http://localhost:8001"
+// API service layer for integrating with NestJS backend
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
-interface ApiResponse<T = any> {
-  success: boolean
-  data?: T
-  message?: string
-  errors?: Record<string, string[]>
+// Common response types
+export interface ApiResponse<T> {
+  data: T;
+  status: number;
+  message: string;
 }
 
-interface RegisterData {
-  fullName: string
-  email: string
-  password: string
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
-interface LoginData {
-  email: string
-  password: string
+// Vocabulary Types
+export interface VocabularyTopic {
+  id: number;
+  topicName: string;
+  description?: string;
+  image?: string;
+  orderIndex: number;
+  isActive: boolean;
+  vocabularies?: Vocabulary[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface UserProfile {
-  id: string
-  fullName: string
-  email: string
-  role?: string
-  avatar?: string
-  [key: string]: any
+export interface Vocabulary {
+  id: number;
+  topicId?: number;
+  englishWord: string;
+  pronunciation?: string;
+  vietnameseMeaning: string;
+  wordType?: string;
+  difficultyLevel: 'Easy' | 'Medium' | 'Hard';
+  image?: string;
+  audioFile?: string;
+  isActive?: boolean;
+  topic?: VocabularyTopic;
+  createdAt?: string;
+  updatedAt?: string;
+  userProgress?: Array<{
+    id: number;
+    userId: number;
+    vocabularyId: number;
+    status: string;
+    masteryLevel: number;
+    timesPracticed: number;
+    lastPracticedAt: string;
+    firstLearnedAt: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
 }
 
-class ApiError extends Error {
-  constructor(
-    public status: number,
-    public message: string,
-    public errors?: Record<string, string[]>
-  ) {
-    super(message)
-    this.name = 'ApiError'
+// Paginated response for vocabulary topics
+export interface VocabularyTopicsResponse {
+  data: VocabularyTopic[];
+  meta: {
+    total: number;
+    pageNumber: number;
+    limitNumber: number;
+    totalPages: number;
+  };
+}
+
+// Grammar Types
+export interface Grammar {
+  id: number;
+  title: string;
+  content: string;
+  difficultyLevel: 'Easy' | 'Medium' | 'Hard';
+  category: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Blog Types
+export interface BlogCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  authorId: number;
+  categoryId: number;
+  status: 'Draft' | 'Published' | 'Archived';
+  publishedAt?: string;
+  image?: string;
+  tags: string[];
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  author?: {
+    id: number;
+    fullName: string;
+    avatar?: string;
+  };
+  category?: BlogCategory;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Course Types
+export interface Course {
+  id: number;
+  title: string;
+  description: string;
+  instructorId: number;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  category: string | { name: string };
+  difficulty?: string;
+  duration: string;
+  price: number;
+  originalPrice?: number;
+  isActive: boolean;
+  thumbnail?: string;
+  image?: string;
+  features: string[];
+  tags: string[];
+  enrolledCount?: number;
+  objectives?: string;
+  instructor?: {
+    id: number;
+    fullName: string;
+    avatar?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseLesson {
+  id: number;
+  title: string;
+  description: string;
+  duration: number;
+  type: 'video' | 'quiz' | 'exam' | 'text';
+  isCompleted: boolean;
+  isLocked: boolean;
+  order: number;
+}
+
+// API Client
+class ApiClient {
+  private baseURL: string;
+
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
   }
-}
 
-async function apiCall<T>(
+  private async request<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
   
-  const defaultOptions: RequestInit = {
+    const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
     ...options,
-  }
+    };
 
   try {
-    const response = await fetch(url, defaultOptions)
+      const response = await fetch(url, config);
     
     if (!response.ok) {
-      let errorData: any = {}
-      
-      try {
-        errorData = await response.json()
-      } catch {
-        // If response is not JSON, use status text
-        errorData = { message: response.statusText }
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      throw new ApiError(
-        response.status,
-        errorData.message || `HTTP ${response.status}`,
-        errorData.errors
-      )
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
     }
+  }
 
-    // Try to parse JSON response
-    try {
-      return await response.json()
-    } catch {
-      // If no JSON content, return empty object
-      return {} as T
-    }
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error
-    }
+  // Vocabulary API
+  async getVocabularyTopics(): Promise<ApiResponse<VocabularyTopicsResponse>> {
+    return this.request<VocabularyTopicsResponse>('/vocabulary-topics');
+  }
+
+  async getVocabularyTopicById(id: number): Promise<VocabularyTopic> {
+    const response = await this.request<any>(`/vocabulary-topics/${id}`);
+    // This endpoint returns the topic directly, not wrapped in ApiResponse
+    return response.data || response;
+  }
+
+  async getVocabularyTopicStats(id: number): Promise<ApiResponse<any>> {
+    return this.request<any>(`/vocabulary-topics/${id}/stats`);
+  }
+
+  async getVocabularies(params?: {
+    topicId?: number;
+    difficultyLevel?: string;
+    includeInactive?: boolean;
+  }): Promise<ApiResponse<Vocabulary[]>> {
+    const queryParams = new URLSearchParams();
+    if (params?.topicId) queryParams.append('topicId', params.topicId.toString());
+    if (params?.difficultyLevel) queryParams.append('difficultyLevel', params.difficultyLevel);
+    if (params?.includeInactive) queryParams.append('includeInactive', params.includeInactive.toString());
     
-    // Network or other errors
-    throw new ApiError(
-      0,
-      error instanceof Error ? error.message : 'Network error occurred'
-    )
+    const endpoint = `/vocabularies${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return this.request<Vocabulary[]>(endpoint);
+  }
+
+  async getVocabularyById(id: number): Promise<ApiResponse<Vocabulary>> {
+    return this.request<Vocabulary>(`/vocabularies/${id}`);
+  }
+
+  async getVocabulariesByTopic(topicId: number): Promise<ApiResponse<Vocabulary[]>> {
+    return this.request<Vocabulary[]>(`/vocabularies/topic/${topicId}`);
+  }
+
+  // Grammar API
+  async getGrammar(params?: {
+    difficultyLevel?: string;
+    includeInactive?: boolean;
+  }): Promise<ApiResponse<Grammar[]>> {
+    const queryParams = new URLSearchParams();
+    if (params?.difficultyLevel) queryParams.append('difficultyLevel', params.difficultyLevel);
+    if (params?.includeInactive) queryParams.append('includeInactive', params.includeInactive.toString());
+    
+    const endpoint = `/grammar${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return this.request<Grammar[]>(endpoint);
+  }
+
+  async searchGrammar(query: string): Promise<ApiResponse<Grammar[]>> {
+    return this.request<Grammar[]>(`/grammar/search?q=${encodeURIComponent(query)}`);
+  }
+
+  async getGrammarById(id: number): Promise<ApiResponse<Grammar>> {
+    return this.request<Grammar>(`/grammar/${id}`);
+  }
+
+  // Blog API
+  async getBlogCategories(): Promise<ApiResponse<BlogCategory[]>> {
+    return this.request<BlogCategory[]>('/blog-categories');
+  }
+
+  async getBlogPosts(params?: {
+    categoryId?: number;
+    authorId?: number;
+    status?: string;
+  }): Promise<ApiResponse<BlogPost[]>> {
+    const queryParams = new URLSearchParams();
+    if (params?.categoryId) queryParams.append('categoryId', params.categoryId.toString());
+    if (params?.authorId) queryParams.append('authorId', params.authorId.toString());
+    if (params?.status) queryParams.append('status', params.status);
+    
+    const endpoint = `/blog-posts${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return this.request<BlogPost[]>(endpoint);
+  }
+
+  async getPublishedBlogPosts(): Promise<ApiResponse<BlogPost[]>> {
+    return this.request<BlogPost[]>('/blog-posts/published');
+  }
+
+  async searchBlogPosts(query: string): Promise<ApiResponse<BlogPost[]>> {
+    return this.request<BlogPost[]>(`/blog-posts/search?q=${encodeURIComponent(query)}`);
+  }
+
+  async getBlogPostBySlug(slug: string): Promise<ApiResponse<BlogPost>> {
+    return this.request<BlogPost>(`/blog-posts/slug/${slug}`);
+  }
+
+  // Course API (if available)
+  async getCourses(): Promise<ApiResponse<Course[]>> {
+    return this.request<Course[]>('/courses');
+  }
+
+  async getCourseById(id: number): Promise<ApiResponse<Course>> {
+    return this.request<Course>(`/courses/${id}`);
+  }
+
+  // Dashboard API
+  async getDashboardStats(): Promise<ApiResponse<any>> {
+    return this.request<any>('/dashboard/stats');
+  }
+
+  async getVocabularyStats(): Promise<ApiResponse<any>> {
+    return this.request<any>('/dashboard/vocabulary/stats');
+  }
+
+  async getGrammarStats(): Promise<ApiResponse<any>> {
+    return this.request<any>('/dashboard/grammar/stats');
   }
 }
 
-export const authApi = {
-  async register(data: RegisterData): Promise<ApiResponse> {
-    return apiCall<ApiResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  },
+// Export singleton instance
+export const apiClient = new ApiClient(API_BASE_URL);
 
-  async login(data: LoginData): Promise<ApiResponse> {
-    return apiCall<ApiResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  },
+// Export individual API functions for convenience
+export const vocabularyApi = {
+  getTopics: () => apiClient.getVocabularyTopics(),
+  getTopicById: (id: number) => apiClient.getVocabularyTopicById(id),
+  getTopicStats: (id: number) => apiClient.getVocabularyTopicStats(id),
+  getAll: (params?: any) => apiClient.getVocabularies(params),
+  getById: (id: number) => apiClient.getVocabularyById(id),
+  getByTopic: (topicId: number) => apiClient.getVocabulariesByTopic(topicId),
+};
 
-  async getProfile(token: string): Promise<UserProfile> {
-    return apiCall<UserProfile>('/user/profile', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-  },
-}
+export const grammarApi = {
+  getAll: (params?: any) => apiClient.getGrammar(params),
+  search: (query: string) => apiClient.searchGrammar(query),
+  getById: (id: number) => apiClient.getGrammarById(id),
+};
 
-export { ApiError }
-export type { ApiResponse, RegisterData, LoginData, UserProfile }
+export const blogApi = {
+  getCategories: () => apiClient.getBlogCategories(),
+  getAll: (params?: any) => apiClient.getBlogPosts(params),
+  getPublished: () => apiClient.getPublishedBlogPosts(),
+  search: (query: string) => apiClient.searchBlogPosts(query),
+  getBySlug: (slug: string) => apiClient.getBlogPostBySlug(slug),
+};
+
+export const courseApi = {
+  getAll: () => apiClient.getCourses(),
+  getById: (id: number) => apiClient.getCourseById(id),
+};
+
+export const dashboardApi = {
+  getStats: () => apiClient.getDashboardStats(),
+  getVocabularyStats: () => apiClient.getVocabularyStats(),
+  getGrammarStats: () => apiClient.getGrammarStats(),
+};

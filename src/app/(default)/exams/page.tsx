@@ -337,7 +337,7 @@ export default function ExamsPage() {
         )}
 
         {/* Pagination */}
-        {pagination.totalPages > 1 && (
+        {pagination.totalPages && pagination.totalPages > 1 && (
           <div className="flex justify-center mt-12">
             <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100">
               <Button

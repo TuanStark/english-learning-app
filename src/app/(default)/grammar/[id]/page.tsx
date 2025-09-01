@@ -1,666 +1,502 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
 import { 
-  PenTool, 
-  Clock, 
-  Users, 
-  Star, 
-  Play,
-  CheckCircle,
-  Award,
-  TrendingUp,
-  Calendar,
-  BookOpen,
-  Download,
-  Share2,
-  Heart,
-  MessageCircle,
-  ChevronRight,
-  PlayCircle,
-  FileText,
-  Brain,
-  Target,
   ArrowLeft,
-  Lightbulb,
+  BookOpen,
+  Play,
+  Volume2,
+  CheckCircle,
+  XCircle,
+  Star,
+  Clock,
+  Target,
+  Brain,
   Zap,
-  Trophy,
-  BarChart3
+  Sparkles,
+  Eye,
+  Heart,
+  Share2,
+  Download,
+  Bookmark,
+  RotateCcw,
+  Shuffle,
+  Settings,
+  Lightbulb,
+  MessageCircle,
+  FileText,
+  Award
 } from "lucide-react"
 import Link from "next/link"
+import { useGrammar } from '@/hooks/useGrammar'
+import { grammarApi, type Grammar } from '@/lib/api'
 
 export default function GrammarDetailPage() {
   const params = useParams()
-  const lessonId = params.id
-  const [currentStep, setCurrentStep] = useState(0)
-  const [hasStarted, setHasStarted] = useState(false)
-  const [completedExercises, setCompletedExercises] = useState<number[]>([])
+  const grammarId = parseInt(params?.id as string)
+  
+  const { grammarLessons, loading, error } = useGrammar()
+  const [selectedGrammar, setSelectedGrammar] = useState<Grammar | null>(null)
+  const [currentExampleIndex, setCurrentExampleIndex] = useState(0)
+  const [showAnswer, setShowAnswer] = useState(false)
+  const [userAnswer, setUserAnswer] = useState("")
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
+  const [progress, setProgress] = useState(0)
+  const [learningMode, setLearningMode] = useState<'lesson' | 'quiz' | 'practice'>('lesson')
 
-  // Mock grammar lesson data
-  const lesson = {
-    id: lessonId,
-    title: 'Present Perfect vs Past Simple',
-    subtitle: 'Phân biệt và sử dụng chính xác thì hiện tại hoàn thành và quá khứ đơn trong giao tiếp và viết',
-    description: 'Bài học này sẽ giúp bạn hiểu rõ sự khác biệt giữa Present Perfect và Past Simple, hai thì thường gây nhầm lẫn nhất trong tiếng Anh. Thông qua lý thuyết chi tiết và bài tập thực hành, bạn sẽ nắm vững cách sử dụng chúng.',
-    category: 'Tenses',
-    difficulty: 'Medium',
-    duration: 45,
-    exerciseCount: 25,
-    completedBy: 3200,
-    rating: 4.8,
-    reviews: 156,
-    thumbnail: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&h=400&fit=crop',
-    isNew: false,
-    isFree: true,
-    progress: 80,
-    lastUpdated: '2024-01-10',
-    skills: ['Grammar Rules', 'Sentence Structure', 'Time Expressions', 'Context Usage'],
-    whatYouLearn: [
-      'Hiểu rõ cấu trúc và cách sử dụng Present Perfect',
-      'Nắm vững quy tắc và cách dùng Past Simple',
-      'Phân biệt được khi nào dùng thì nào',
-      'Sử dụng đúng các time expressions',
-      'Áp dụng vào giao tiếp và viết thực tế',
-      'Tránh được những lỗi phổ biến'
-    ],
-    sections: [
-      {
-        title: 'Lý thuyết cơ bản',
-        type: 'theory',
-        duration: 15,
-        content: 'Giới thiệu về Present Perfect và Past Simple',
-        completed: true
-      },
-      {
-        title: 'Cấu trúc Present Perfect',
-        type: 'theory',
-        duration: 10,
-        content: 'Cách thành lập và sử dụng Present Perfect',
-        completed: true
-      },
-      {
-        title: 'Cấu trúc Past Simple',
-        type: 'theory',
-        duration: 8,
-        content: 'Cách thành lập và sử dụng Past Simple',
-        completed: true
-      },
-      {
-        title: 'So sánh và phân biệt',
-        type: 'theory',
-        duration: 12,
-        content: 'Khi nào dùng Present Perfect, khi nào dùng Past Simple',
-        completed: false
-      },
-      {
-        title: 'Bài tập thực hành 1',
-        type: 'exercise',
-        duration: 15,
-        content: 'Luyện tập với 10 câu hỏi cơ bản',
-        completed: false
-      },
-      {
-        title: 'Bài tập thực hành 2',
-        type: 'exercise',
-        duration: 20,
-        content: 'Bài tập nâng cao với 15 câu hỏi',
-        completed: false
-      }
-    ],
-    exercises: [
-      {
-        id: 1,
-        title: 'Basic Practice',
-        questions: 10,
-        difficulty: 'Easy',
-        type: 'Multiple Choice',
-        completed: true,
-        score: 8
-      },
-      {
-        id: 2,
-        title: 'Intermediate Practice',
-        questions: 15,
-        difficulty: 'Medium',
-        type: 'Fill in the blanks',
-        completed: false,
-        score: null
-      },
-      {
-        id: 3,
-        title: 'Advanced Practice',
-        questions: 12,
-        difficulty: 'Hard',
-        type: 'Error Correction',
-        completed: false,
-        score: null
-      }
-    ],
-    tips: [
-      'Present Perfect thường đi với "already", "just", "yet", "ever", "never"',
-      'Past Simple dùng với thời gian cụ thể như "yesterday", "last week"',
-      'Present Perfect không dùng với thời gian cụ thể trong quá khứ',
-      'Chú ý đến ngữ cảnh để chọn thì phù hợp',
-      'Luyện tập thường xuyên để tạo phản xạ tự nhiên'
-    ],
-    examples: [
-      {
-        correct: "I have lived in Hanoi for 5 years.",
-        incorrect: "I lived in Hanoi for 5 years.",
-        explanation: "Dùng Present Perfect vì hành động bắt đầu trong quá khứ và tiếp tục đến hiện tại."
-      },
-      {
-        correct: "I went to the cinema yesterday.",
-        incorrect: "I have gone to the cinema yesterday.",
-        explanation: "Dùng Past Simple vì có thời gian cụ thể 'yesterday'."
-      }
-    ],
-    reviews_data: [
-      {
-        id: 1,
-        user: 'Nguyễn Văn A',
-        rating: 5,
-        date: '1 tuần trước',
-        comment: 'Bài học rất chi tiết và dễ hiểu. Cuối cùng tôi cũng phân biệt được 2 thì này!',
-        helpful: 12
-      },
-      {
-        id: 2,
-        user: 'Trần Thị B',
-        rating: 4,
-        date: '2 tuần trước',
-        comment: 'Các ví dụ rất thực tế. Tuy nhiên mong có thêm bài tập nâng cao.',
-        helpful: 8
-      }
-    ]
+  // Find the grammar lesson
+  const grammar = grammarLessons.find(g => g.id === grammarId)
+
+  useEffect(() => {
+    if (grammar) {
+      setSelectedGrammar(grammar)
+    }
+  }, [grammar])
+
+  const handleNextExample = () => {
+    // Mock examples for now - in real app, this would come from backend
+    setCurrentExampleIndex(prev => prev + 1)
+  }
+
+  const handlePreviousExample = () => {
+    setCurrentExampleIndex(prev => Math.max(0, prev - 1))
+  }
+
+  const handleCheckAnswer = () => {
+    // Mock answer checking - in real app, this would validate against backend
+    const correct = userAnswer.toLowerCase().includes('correct')
+    setIsCorrect(correct)
+    if (correct) {
+      setProgress(prev => Math.min(100, prev + 20))
+    }
+  }
+
+  const handleShuffle = () => {
+    setCurrentExampleIndex(0)
+    setProgress(0)
+    setShowAnswer(false)
+    setUserAnswer("")
+    setIsCorrect(null)
   }
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Easy': return 'bg-success-100 text-success-800'
-      case 'Medium': return 'bg-warning-100 text-warning-800'
-      case 'Hard': return 'bg-error-100 text-error-800'
-      default: return 'bg-neutral-100 text-neutral-800'
+      case "Easy":
+        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+      case "Medium":
+        return "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+      case "Hard":
+        return "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+      default:
+        return "bg-gradient-to-r from-gray-500 to-slate-500 text-white"
     }
   }
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'theory': return BookOpen
-      case 'exercise': return PenTool
-      case 'quiz': return Brain
-      default: return PlayCircle
+  // Mock examples - in real app, this would come from backend
+  const mockExamples = [
+    {
+      id: 1,
+      sentence: "I have been studying English for 5 years.",
+      explanation: "Present Perfect Continuous - diễn tả hành động bắt đầu trong quá khứ và vẫn tiếp tục đến hiện tại",
+      vietnamese: "Tôi đã học tiếng Anh được 5 năm rồi."
+    },
+    {
+      id: 2,
+      sentence: "She has lived in London since 2020.",
+      explanation: "Present Perfect - diễn tả hành động bắt đầu trong quá khứ và kết quả vẫn còn ở hiện tại",
+      vietnamese: "Cô ấy đã sống ở London từ năm 2020."
+    },
+    {
+      id: 3,
+      sentence: "They have just finished their homework.",
+      explanation: "Present Perfect với 'just' - diễn tả hành động vừa mới hoàn thành",
+      vietnamese: "Họ vừa mới hoàn thành bài tập về nhà."
     }
+  ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải bài ngữ pháp...</p>
+        </div>
+      </div>
+    )
   }
 
-  const handleStartLesson = () => {
-    setHasStarted(true)
-    setCurrentStep(0)
-  }
-
-  const handleCompleteExercise = (exerciseId: number, score: number) => {
-    setCompletedExercises([...completedExercises, exerciseId])
+  if (error || !selectedGrammar) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <XCircle className="h-32 w-32 text-red-500 mx-auto" />
+          <h2 className="text-2xl font-bold text-gray-900 mt-4">Không thể tải bài ngữ pháp</h2>
+          <p className="text-gray-600 mt-2">{error || "Không tìm thấy bài ngữ pháp"}</p>
+          <Button asChild className="mt-4">
+            <Link href="/grammar">Quay lại Grammar</Link>
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-brand-50/30">
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-neutral-600 mb-6">
-          <Link href="/grammar" className="hover:text-brand-600 transition-colors">
-            Ngữ pháp
-          </Link>
-          <ChevronRight className="w-4 h-4" />
-          <Link href={`/grammar?category=${lesson.category}`} className="hover:text-brand-600 transition-colors">
-            {lesson.category}
-          </Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-neutral-900 font-medium">{lesson.title}</span>
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-40 h-40 bg-gradient-to-br from-blue-200/20 to-cyan-200/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-20 left-1/4 w-48 h-48 bg-gradient-to-br from-amber-200/20 to-orange-200/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Hero Section */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-600 to-brand-700 text-white">
-              <div className="absolute inset-0 bg-black/20"></div>
-              <div className="relative p-8 md:p-12">
-                <div className="flex items-center gap-3 mb-4">
-                  <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                    {lesson.category}
-                  </Badge>
-                  <Badge className={getDifficultyColor(lesson.difficulty)}>
-                    {lesson.difficulty}
-                  </Badge>
-                  {lesson.isFree && (
-                    <Badge className="bg-success-500 text-white">
-                      Miễn phí
-                    </Badge>
-                  )}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <Button asChild variant="ghost" className="mb-4">
+            <Link href="/grammar">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Quay lại Grammar
+            </Link>
+          </Button>
+          
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl">
+                  <BookOpen className="h-8 w-8 text-white" />
                 </div>
-                
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">
-                  {lesson.title}
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-800 bg-clip-text text-transparent">
+                    {selectedGrammar.title}
                 </h1>
-                
-                <p className="text-lg text-brand-100 mb-6 max-w-2xl">
-                  {lesson.subtitle}
-                </p>
-                
-                <div className="flex flex-wrap items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span>{lesson.duration} phút</span>
+                  <p className="text-gray-600 mt-2 text-lg">
+                    {selectedGrammar.content.substring(0, 100)}...
+                  </p>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">{selectedGrammar.orderIndex}</div>
+                  <div className="text-sm text-gray-600">Thứ tự</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <PenTool className="w-4 h-4" />
-                    <span>{lesson.exerciseCount} bài tập</span>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">{Math.round(progress)}%</div>
+                  <div className="text-sm text-gray-600">Tiến độ</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    <span>{lesson.completedBy} người học</span>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">{mockExamples.length}</div>
+                  <div className="text-sm text-gray-600">Ví dụ</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span>{lesson.rating} ({lesson.reviews} đánh giá)</span>
-                  </div>
+                <div className="text-center">
+                  <Badge className={getDifficultyColor(selectedGrammar.difficultyLevel)}>
+                    {selectedGrammar.difficultyLevel}
+                  </Badge>
+                </div>
+              </div>
                 </div>
               </div>
             </div>
 
             {/* Progress Bar */}
-            {lesson.progress > 0 && (
-              <Card className="border-0 shadow-soft">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Tiến độ học tập</span>
-                    <span className="text-sm text-neutral-600">{lesson.progress}%</span>
+        <div className="mb-8">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-lg font-semibold text-gray-900">Tiến độ học tập</span>
+                <span className="text-sm text-gray-600">{currentExampleIndex + 1} / {mockExamples.length}</span>
                   </div>
-                  <div className="w-full bg-neutral-200 rounded-full h-3">
-                    <div 
-                      className="bg-gradient-to-r from-brand-500 to-brand-600 h-3 rounded-full transition-all duration-300" 
-                      style={{ width: `${lesson.progress}%` }}
-                    ></div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Tabs Content */}
-            <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 bg-neutral-100 p-1 rounded-2xl">
-                <TabsTrigger value="overview" className="rounded-xl">Tổng quan</TabsTrigger>
-                <TabsTrigger value="content" className="rounded-xl">Nội dung</TabsTrigger>
-                <TabsTrigger value="exercises" className="rounded-xl">Bài tập</TabsTrigger>
-                <TabsTrigger value="reviews" className="rounded-xl">Đánh giá</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-6">
-                {/* What you'll learn */}
-                <Card className="border-0 shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="w-5 h-5 text-brand-600" />
-                      Bạn sẽ học được gì
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {lesson.whatYouLearn.map((item, index) => (
-                        <div key={index} className="flex items-start gap-3">
-                          <CheckCircle className="w-5 h-5 text-success-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-neutral-700">{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Description */}
-                <Card className="border-0 shadow-soft">
-                  <CardHeader>
-                    <CardTitle>Mô tả bài học</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-neutral-700 leading-relaxed">
-                      {lesson.description}
-                    </p>
-                  </CardContent>
-                </Card>
-
-                {/* Tips */}
-                <Card className="border-0 shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-warning-500" />
-                      Mẹo học tập
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {lesson.tips.map((tip, index) => (
-                        <div key={index} className="flex items-start gap-3">
-                          <div className="w-6 h-6 bg-warning-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-xs font-bold text-warning-700">{index + 1}</span>
-                          </div>
-                          <span className="text-neutral-700">{tip}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Examples */}
-                <Card className="border-0 shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Zap className="w-5 h-5 text-purple-500" />
-                      Ví dụ minh họa
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {lesson.examples.map((example, index) => (
-                        <div key={index} className="space-y-3">
-                          <div className="p-4 bg-success-50 border border-success-200 rounded-xl">
-                            <div className="flex items-center gap-2 mb-2">
-                              <CheckCircle className="w-4 h-4 text-success-600" />
-                              <span className="text-sm font-medium text-success-800">Đúng</span>
-                            </div>
-                            <p className="text-success-900 font-medium">{example.correct}</p>
-                          </div>
-                          <div className="p-4 bg-error-50 border border-error-200 rounded-xl">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="w-4 h-4 text-error-600">✗</span>
-                              <span className="text-sm font-medium text-error-800">Sai</span>
-                            </div>
-                            <p className="text-error-900 font-medium line-through">{example.incorrect}</p>
-                          </div>
-                          <div className="p-4 bg-brand-50 border border-brand-200 rounded-xl">
-                            <p className="text-brand-900 text-sm">{example.explanation}</p>
+              <Progress value={progress} className="h-3 bg-gray-200">
+                <div 
+                  className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-purple-500 to-pink-600"
+                  style={{ width: `${progress}%` }}
+                />
+              </Progress>
                           </div>
                         </div>
-                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
 
-              <TabsContent value="content" className="space-y-4">
-                {lesson.sections.map((section, index) => {
-                  const IconComponent = getTypeIcon(section.type)
-                  return (
-                    <Card key={index} className="border-0 shadow-soft">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                              section.completed ? 'bg-success-100' : 'bg-neutral-100'
-                            }`}>
-                              {section.completed ? (
-                                <CheckCircle className="w-5 h-5 text-success-600" />
-                              ) : (
-                                <IconComponent className="w-5 h-5 text-neutral-600" />
-                              )}
-                            </div>
-                            <div>
-                              <h3 className="font-medium">{section.title}</h3>
-                              <p className="text-sm text-neutral-600">{section.content}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-sm text-neutral-600">
-                              <Clock className="w-4 h-4 inline mr-1" />
-                              {section.duration} phút
-                            </div>
+        {/* Learning Mode Tabs */}
+        <div className="mb-8">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
+              <div className="flex gap-4">
+                <Button
+                  variant={learningMode === 'lesson' ? 'default' : 'outline'}
+                  onClick={() => setLearningMode('lesson')}
+                  className="flex-1"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Bài học
+                </Button>
                             <Button 
-                              size="sm" 
-                              variant={section.completed ? "outline" : "default"}
-                              disabled={section.completed}
-                            >
-                              {section.completed ? 'Hoàn thành' : 'Bắt đầu'}
+                  variant={learningMode === 'quiz' ? 'default' : 'outline'}
+                  onClick={() => setLearningMode('quiz')}
+                  className="flex-1"
+                >
+                  <Target className="h-4 w-4 mr-2" />
+                  Quiz
                             </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </TabsContent>
-
-              <TabsContent value="exercises" className="space-y-4">
-                {lesson.exercises.map((exercise, index) => (
-                  <Card key={exercise.id} className="border-0 shadow-soft">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            exercise.completed ? 'bg-success-100' : 'bg-brand-100'
-                          }`}>
-                            {exercise.completed ? (
-                              <Trophy className="w-5 h-5 text-success-600" />
-                            ) : (
-                              <PenTool className="w-5 h-5 text-brand-600" />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-medium">{exercise.title}</h3>
-                            <div className="flex items-center gap-4 text-sm text-neutral-600">
-                              <span>{exercise.questions} câu hỏi</span>
-                              <Badge className={getDifficultyColor(exercise.difficulty)}>
-                                {exercise.difficulty}
-                              </Badge>
-                              <span>{exercise.type}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {exercise.completed && exercise.score && (
-                            <div className="text-right">
-                              <div className="text-lg font-bold text-success-600">
-                                {exercise.score}/{exercise.questions}
-                              </div>
-                              <div className="text-xs text-neutral-600">điểm</div>
-                            </div>
-                          )}
                           <Button 
-                            size="sm"
-                            variant={exercise.completed ? "outline" : "default"}
-                            onClick={() => !exercise.completed && handleCompleteExercise(exercise.id, 8)}
-                          >
-                            {exercise.completed ? 'Làm lại' : 'Bắt đầu'}
+                  variant={learningMode === 'practice' ? 'default' : 'outline'}
+                  onClick={() => setLearningMode('practice')}
+                  className="flex-1"
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  Thực hành
                           </Button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </TabsContent>
-
-              <TabsContent value="reviews" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <Card className="border-0 shadow-soft text-center">
-                    <CardContent className="p-6">
-                      <div className="text-3xl font-bold text-neutral-900 mb-2">{lesson.rating}</div>
-                      <div className="flex justify-center mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                        ))}
+          </div>
                       </div>
-                      <div className="text-sm text-neutral-600">{lesson.reviews} đánh giá</div>
-                    </CardContent>
-                  </Card>
+
+        {/* Main Learning Area */}
+        <div className="mb-8">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+              {/* Grammar Content */}
+              <div className="mb-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <Badge className={`${getDifficultyColor(selectedGrammar.difficultyLevel)} px-4 py-2 text-lg`}>
+                    {selectedGrammar.difficultyLevel}
+                  </Badge>
+                  <Badge variant="outline" className="px-4 py-2">
+                    {selectedGrammar.category}
+                  </Badge>
                 </div>
 
-                <div className="space-y-6">
-                  {lesson.reviews_data.map((review) => (
-                    <Card key={review.id} className="border-0 shadow-soft">
-                      <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center">
-                            <span className="font-bold text-brand-600">{review.user.charAt(0)}</span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium">{review.user}</h4>
-                              <span className="text-sm text-neutral-600">{review.date}</span>
-                            </div>
-                            <div className="flex items-center gap-2 mb-3">
-                              {[...Array(5)].map((_, i) => (
-                                <Star 
-                                  key={i} 
-                                  className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-neutral-300'}`} 
-                                />
-                              ))}
-                            </div>
-                            <p className="text-neutral-700 mb-3">{review.comment}</p>
-                            <div className="flex items-center gap-4 text-sm text-neutral-600">
-                              <button className="flex items-center gap-1 hover:text-brand-600 transition-colors">
-                                <Heart className="w-4 h-4" />
-                                Hữu ích ({review.helpful})
-                              </button>
-                              <button className="flex items-center gap-1 hover:text-brand-600 transition-colors">
-                                <MessageCircle className="w-4 h-4" />
-                                Trả lời
-                              </button>
-                            </div>
-                          </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">
+                  {selectedGrammar.title}
+                </h2>
+
+                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl border-l-4 border-blue-500 mb-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Lightbulb className="h-6 w-6 text-yellow-500" />
+                      Lý thuyết
+                    </h3>
+                    <p className="text-lg leading-relaxed">{selectedGrammar.content}</p>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
                 </div>
-              </TabsContent>
-            </Tabs>
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-8 space-y-6">
-              {/* Start Learning */}
-              <Card className="border-0 shadow-large overflow-hidden">
-                <div className="relative">
-                  <img
-                    src={lesson.thumbnail}
-                    alt={lesson.title}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <Brain className="w-12 h-12 mx-auto mb-2" />
-                      <div className="text-lg font-bold">Ngữ pháp</div>
-                      <div className="text-sm">Học & Luyện tập</div>
-                    </div>
-                  </div>
+              {/* Examples Section */}
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <FileText className="h-6 w-6 text-blue-500" />
+                  Ví dụ minh họa
+                </h3>
+
+                {mockExamples[currentExampleIndex] && (
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border-2 border-purple-200">
+                    <div className="mb-4">
+                      <h4 className="text-xl font-bold text-gray-900 mb-2">Ví dụ {currentExampleIndex + 1}:</h4>
+                      <p className="text-lg text-gray-800 font-medium mb-2">
+                        "{mockExamples[currentExampleIndex].sentence}"
+                      </p>
+                      <p className="text-gray-600 mb-2">
+                        {mockExamples[currentExampleIndex].vietnamese}
+                      </p>
                 </div>
                 
-                <CardContent className="p-6">
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold mb-2">Bắt đầu học ngay</h3>
-                    <p className="text-neutral-600">
-                      {lesson.duration} phút • {lesson.exerciseCount} bài tập
-                    </p>
+                    <div className="bg-white p-4 rounded-xl border border-purple-200">
+                      <h5 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <MessageCircle className="h-4 w-4 text-purple-500" />
+                        Giải thích:
+                      </h5>
+                      <p className="text-gray-700">
+                        {mockExamples[currentExampleIndex].explanation}
+                      </p>
+                    </div>
                   </div>
+                )}
                   
-                  <div className="space-y-3 mb-6">
+                {/* Example Navigation */}
+                <div className="flex items-center justify-between mt-6">
                     <Button 
-                      className="w-full bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white shadow-glow"
-                      size="lg"
-                      onClick={handleStartLesson}
+                    onClick={handlePreviousExample}
+                    disabled={currentExampleIndex === 0}
+                    variant="outline"
+                    className="px-6 py-3"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Ví dụ trước
+                  </Button>
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleShuffle} className="px-4 py-2">
+                      <Shuffle className="h-4 w-4 mr-2" />
+                      Xáo trộn
+                    </Button>
+                    <Button variant="outline" onClick={() => setCurrentExampleIndex(0)} className="px-4 py-2">
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Bắt đầu lại
+                    </Button>
+                  </div>
+                  
+                  <Button
+                    onClick={handleNextExample}
+                    disabled={currentExampleIndex === mockExamples.length - 1}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                  >
+                    Ví dụ tiếp theo
+                    <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quiz Section */}
+              {learningMode === 'quiz' && (
+                <div className="mb-8">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <Target className="h-6 w-6 text-green-500" />
+                    Kiểm tra kiến thức
+                  </h3>
+
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl border-2 border-green-200">
+                    <div className="mb-4">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">Câu hỏi:</h4>
+                      <p className="text-gray-700">
+                        Hãy viết một câu sử dụng {selectedGrammar.title.toLowerCase()} để diễn tả một hành động đã hoàn thành.
+                      </p>
+                    </div>
+
+                    <div className="mb-4">
+                      <input
+                        type="text"
+                        placeholder="Nhập câu trả lời của bạn..."
+                        value={userAnswer}
+                        onChange={(e) => setUserAnswer(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-green-500 text-lg"
+                      />
+                    </div>
+
+                    <div className="flex gap-4">
+                      <Button onClick={handleCheckAnswer} className="bg-green-600 hover:bg-green-700">
+                        Kiểm tra
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowAnswer(!showAnswer)}>
+                        {showAnswer ? 'Ẩn đáp án' : 'Xem đáp án mẫu'}
+                      </Button>
+                    </div>
+
+                    {isCorrect !== null && (
+                      <div className={`mt-4 p-4 rounded-2xl ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        <div className="flex items-center gap-2">
+                          {isCorrect ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+                          <span className="font-semibold">
+                            {isCorrect ? 'Tuyệt vời! Câu trả lời của bạn rất tốt!' : 'Hãy thử lại! Bạn có thể làm tốt hơn!'}
+                          </span>
+                    </div>
+                  </div>
+                    )}
+
+                    {showAnswer && (
+                      <div className="mt-4 p-4 bg-white rounded-xl border border-green-200">
+                        <h5 className="font-semibold text-gray-900 mb-2">Đáp án mẫu:</h5>
+                        <p className="text-gray-700">
+                          "I have finished my homework." (Tôi đã hoàn thành bài tập về nhà.)
+                        </p>
+                        <p className="text-sm text-gray-600 mt-2">
+                          Đây là một ví dụ điển hình sử dụng {selectedGrammar.title.toLowerCase()}.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Practice Section */}
+              {learningMode === 'practice' && (
+                <div className="mb-8">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <Brain className="h-6 w-6 text-orange-500" />
+                    Bài tập thực hành
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="border-2 border-orange-200 hover:border-orange-300 transition-colors">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Award className="h-5 w-5 text-orange-500" />
+                          Bài tập 1: Điền từ
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-700 mb-4">
+                          Hoàn thành câu bằng cách sử dụng {selectedGrammar.title.toLowerCase()}.
+                        </p>
+                        <Button variant="outline" className="w-full">
+                          Bắt đầu
+                        </Button>
+                </CardContent>
+              </Card>
+
+                    <Card className="border-2 border-orange-200 hover:border-orange-300 transition-colors">
+                <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Award className="h-5 w-5 text-orange-500" />
+                          Bài tập 2: Viết câu
+                        </CardTitle>
+                </CardHeader>
+                <CardContent>
+                        <p className="text-gray-700 mb-4">
+                          Viết 3 câu sử dụng {selectedGrammar.title.toLowerCase()}.
+                        </p>
+                        <Button variant="outline" className="w-full">
+                          Bắt đầu
+                        </Button>
+                      </CardContent>
+                    </Card>
+                    </div>
+                    </div>
+              )}
+                    </div>
+                    </div>
+                  </div>
+
+        {/* Related Grammar */}
+        <div className="mb-8">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Bài ngữ pháp liên quan</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {grammarLessons
+                  .filter(g => g.id !== selectedGrammar.id && g.category === selectedGrammar.category)
+                  .slice(0, 3)
+                  .map((relatedGrammar) => (
+                    <div
+                      key={relatedGrammar.id}
+                      className="p-4 rounded-2xl border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all duration-300 cursor-pointer"
                     >
-                      <Play className="w-5 h-5 mr-2" />
-                      {hasStarted ? 'Tiếp tục học' : 'Bắt đầu học'}
-                    </Button>
-                    <Button variant="outline" className="w-full" size="lg">
-                      <Download className="w-4 h-4 mr-2" />
-                      Tải tài liệu
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Lý thuyết chi tiết</span>
-                      <CheckCircle className="w-4 h-4 text-success-500" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Bài tập thực hành</span>
-                      <CheckCircle className="w-4 h-4 text-success-500" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Ví dụ minh họa</span>
-                      <CheckCircle className="w-4 h-4 text-success-500" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Chấm điểm tự động</span>
-                      <CheckCircle className="w-4 h-4 text-success-500" />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-center gap-4 mt-6 pt-6 border-t">
-                    <Button variant="ghost" size="sm">
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Chia sẻ
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Heart className="w-4 h-4 mr-2" />
-                      Yêu thích
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Lesson Stats */}
-              <Card className="border-0 shadow-soft">
-                <CardHeader>
-                  <CardTitle className="text-lg">Thống kê bài học</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Độ khó</span>
-                      <Badge className={getDifficultyColor(lesson.difficulty)}>
-                        {lesson.difficulty}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Đánh giá</span>
-                      <span className="font-bold text-lg">{lesson.rating}/5</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Tỷ lệ hoàn thành</span>
-                      <span className="font-bold text-success-600">92%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Cập nhật</span>
-                      <span className="font-bold">{lesson.lastUpdated}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Skills */}
-              <Card className="border-0 shadow-soft">
-                <CardHeader>
-                  <CardTitle className="text-lg">Kỹ năng phát triển</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {lesson.skills.map((skill, index) => (
-                      <div key={index} className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
-                          <BarChart3 className="w-4 h-4 text-brand-600" />
-                        </div>
-                        <span className="font-medium text-sm">{skill}</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900">{relatedGrammar.title}</h4>
+                        <Badge className={getDifficultyColor(relatedGrammar.difficultyLevel)}>
+                          {relatedGrammar.difficultyLevel}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {relatedGrammar.content.substring(0, 100)}...
+                      </p>
+                      <Button asChild variant="ghost" className="mt-3 p-0 h-auto text-purple-600 hover:text-purple-700">
+                        <Link href={`/grammar/${relatedGrammar.id}`}>
+                          Xem chi tiết →
+                        </Link>
+                      </Button>
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>

@@ -40,7 +40,7 @@ import Link from "next/link"
 
 export default function RoadmapDetailPage() {
   const params = useParams()
-  const roadmapId = params.id
+  const roadmapId = params?.id
   const [enrolledSteps, setEnrolledSteps] = useState<number[]>([1, 2])
 
   // Mock roadmap data
