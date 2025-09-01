@@ -1,412 +1,637 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
 import { 
+  Search, 
+  Filter, 
   BookOpen, 
-  Clock, 
   Users, 
   Star, 
-  Filter,
-  Search,
+  Clock, 
   Play,
+  Sparkles,
   Brain,
+  Zap,
   Target,
+  GraduationCap,
+  Heart,
+  Crown,
   TrendingUp,
-  Volume2,
+  Award,
+  Globe,
+  Lightbulb,
+  Rocket,
   Eye,
-  RotateCcw
+  ArrowRight,
+  CheckCircle,
+  MessageCircle,
+  BookMarked,
+  Flame
 } from "lucide-react"
 import Link from "next/link"
 
-const categories = ['Tất cả', 'IELTS', 'TOEFL', 'Academic', 'Business', 'Daily Life', 'Travel', 'Technology']
-const levels = ['Tất cả', 'Beginner', 'Intermediate', 'Advanced']
-
+// Mock data for vocabulary sets
 const mockVocabularySets = [
   {
     id: 1,
-    title: 'IELTS Vocabulary - Academic Module',
-    description: 'Bộ từ vựng academic quan trọng nhất cho IELTS Writing và Speaking với định nghĩa, ví dụ và cách phát âm chuẩn.',
-    category: 'IELTS',
-    level: 'Advanced',
+    title: "Business English Vocabulary: Essential Terms",
+    description: "Học 500+ từ vựng tiếng Anh thương mại cần thiết cho môi trường công sở và giao tiếp kinh doanh.",
+    instructor: "Dr. Sarah Johnson",
+    instructorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+    level: "Intermediate",
+    category: "Business",
     wordCount: 500,
-    studyTime: 120,
-    completedBy: 2500,
+    duration: "8 weeks",
+    students: 1250,
     rating: 4.8,
-    thumbnail: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=250&fit=crop',
+    reviews: 89,
+    progress: 75,
     isNew: true,
-    isFree: true,
-    progress: 35
+    isFree: false,
+    thumbnail: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=250&fit=crop",
+    features: ["Flashcards", "Audio Pronunciation", "Practice Tests", "Progress Tracking"],
+    tags: ["Business", "Vocabulary", "Intermediate", "Professional"]
   },
   {
     id: 2,
-    title: 'Business English Vocabulary',
-    description: 'Từ vựng thiết yếu cho môi trường công sở và kinh doanh hiện đại.',
-    category: 'Business',
-    level: 'Intermediate',
-    wordCount: 300,
-    studyTime: 80,
-    completedBy: 1800,
+    title: "Academic Vocabulary for IELTS & TOEFL",
+    description: "Làm chủ 800+ từ vựng học thuật cần thiết để đạt điểm cao trong các kỳ thi quốc tế.",
+    instructor: "Prof. Michael Chen",
+    instructorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+    level: "Advanced",
+    category: "Academic",
+    wordCount: 800,
+    duration: "12 weeks",
+    students: 890,
     rating: 4.7,
-    thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=250&fit=crop',
+    reviews: 67,
+    progress: 100,
     isNew: false,
     isFree: false,
-    progress: 0
+    thumbnail: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=250&fit=crop",
+    features: ["Academic Context", "Writing Examples", "Reading Passages", "Speaking Practice"],
+    tags: ["Academic", "IELTS", "TOEFL", "Advanced"]
   },
   {
     id: 3,
-    title: 'Daily Conversation Vocabulary',
-    description: 'Từ vựng hàng ngày cho giao tiếp thông thường và các tình huống thực tế.',
-    category: 'Daily Life',
-    level: 'Beginner',
-    wordCount: 200,
-    studyTime: 50,
-    completedBy: 3200,
-    rating: 4.6,
-    thumbnail: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&h=250&fit=crop',
+    title: "Daily Conversation Vocabulary",
+    description: "Học 300+ từ vựng giao tiếp hàng ngày để tự tin trò chuyện bằng tiếng Anh.",
+    instructor: "Emma Wilson",
+    instructorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+    level: "Beginner",
+    category: "Conversation",
+    wordCount: 300,
+    duration: "6 weeks",
+    students: 2100,
+    rating: 4.9,
+    reviews: 156,
+    progress: 0,
     isNew: false,
     isFree: true,
-    progress: 80
+    thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop",
+    features: ["Daily Scenarios", "Pronunciation Guide", "Practice Dialogues", "Cultural Notes"],
+    tags: ["Conversation", "Beginner", "Daily Life", "Free"]
   },
   {
     id: 4,
-    title: 'TOEFL Essential Words',
-    description: 'Từ vựng cốt lõi cho kỳ thi TOEFL iBT với các từ xuất hiện thường xuyên nhất.',
-    category: 'TOEFL',
-    level: 'Advanced',
+    title: "Medical & Healthcare Vocabulary",
+    description: "Học 400+ từ vựng y tế và chăm sóc sức khỏe cho chuyên gia y tế và sinh viên.",
+    instructor: "David Thompson",
+    instructorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+    level: "Intermediate",
+    category: "Medical",
     wordCount: 400,
-    studyTime: 100,
-    completedBy: 1500,
-    rating: 4.9,
-    thumbnail: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=250&fit=crop',
-    isNew: true,
+    duration: "10 weeks",
+    students: 750,
+    rating: 4.6,
+    reviews: 45,
+    progress: 25,
+    isNew: false,
     isFree: false,
-    progress: 0
+    thumbnail: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=250&fit=crop",
+    features: ["Medical Terms", "Patient Communication", "Case Studies", "Professional Context"],
+    tags: ["Medical", "Healthcare", "Professional", "Intermediate"]
   },
   {
     id: 5,
-    title: 'Travel English Vocabulary',
-    description: 'Từ vựng du lịch cần thiết cho các chuyến đi và giao tiếp với người nước ngoài.',
-    category: 'Travel',
-    level: 'Intermediate',
-    wordCount: 250,
-    studyTime: 60,
-    completedBy: 2100,
-    rating: 4.5,
-    thumbnail: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=250&fit=crop',
-    isNew: false,
-    isFree: true,
-    progress: 60
+    title: "Travel & Tourism Vocabulary",
+    description: "Làm chủ 350+ từ vựng du lịch và khách sạn để tự tin đi du lịch nước ngoài.",
+    instructor: "Lisa Park",
+    instructorAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+    level: "Intermediate",
+    category: "Travel",
+    wordCount: 350,
+    duration: "8 weeks",
+    students: 1100,
+    rating: 4.8,
+    reviews: 78,
+    progress: 50,
+    isNew: true,
+    isFree: false,
+    thumbnail: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=250&fit=crop",
+    features: ["Travel Scenarios", "Cultural Context", "Practical Usage", "Survival Phrases"],
+    tags: ["Travel", "Tourism", "Practical", "Intermediate"]
   },
   {
     id: 6,
-    title: 'Technology & IT Vocabulary',
-    description: 'Từ vựng công nghệ thông tin và các thuật ngữ kỹ thuật hiện đại.',
-    category: 'Technology',
-    level: 'Advanced',
-    wordCount: 350,
-    studyTime: 90,
-    completedBy: 890,
-    rating: 4.4,
-    thumbnail: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=250&fit=crop',
+    title: "Technology & IT Vocabulary",
+    description: "Học 450+ từ vựng công nghệ và công nghệ thông tin cho chuyên gia IT và người yêu công nghệ.",
+    instructor: "Maria Garcia",
+    instructorAvatar: "https://images.unsplash.com/photo-1548142813-c348350df52b?w=150&h=150&fit=crop&crop=face",
+    level: "Advanced",
+    category: "Technology",
+    wordCount: 450,
+    duration: "10 weeks",
+    students: 1800,
+    rating: 4.9,
+    reviews: 234,
+    progress: 0,
     isNew: false,
     isFree: false,
-    progress: 0
-  }
-]
-
-const studyMethods = [
-  {
-    name: 'Flashcards',
-    description: 'Học từ vựng với thẻ ghi nhớ tương tác',
-    icon: Eye,
-    color: 'from-blue-500 to-blue-600'
-  },
-  {
-    name: 'Pronunciation',
-    description: 'Luyện phát âm với audio chuẩn',
-    icon: Volume2,
-    color: 'from-green-500 to-green-600'
-  },
-  {
-    name: 'Memory Games',
-    description: 'Trò chơi ghi nhớ thú vị',
-    icon: Brain,
-    color: 'from-purple-500 to-purple-600'
-  },
-  {
-    name: 'Spaced Repetition',
-    description: 'Ôn tập theo chu kỳ khoa học',
-    icon: RotateCcw,
-    color: 'from-orange-500 to-orange-600'
+    thumbnail: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=250&fit=crop",
+    features: ["Tech Terms", "Industry Context", "Latest Trends", "Professional Usage"],
+    tags: ["Technology", "IT", "Advanced", "Professional"]
   }
 ]
 
 export default function VocabularyPage() {
-  const [selectedCategory, setSelectedCategory] = useState('Tất cả')
-  const [selectedLevel, setSelectedLevel] = useState('Tất cả')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedLevel, setSelectedLevel] = useState("all")
+  const [hoveredSet, setHoveredSet] = useState<number | null>(null)
+
+  const categories = ["all", "Business", "Academic", "Conversation", "Medical", "Travel", "Technology"]
+  const levels = ["all", "Beginner", "Intermediate", "Advanced"]
 
   const filteredSets = mockVocabularySets.filter(set => {
-    const matchesCategory = selectedCategory === 'Tất cả' || set.category === selectedCategory
-    const matchesLevel = selectedLevel === 'Tất cả' || set.level === selectedLevel
-    const matchesSearch = searchQuery === '' || 
-      set.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      set.description.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesCategory && matchesLevel && matchesSearch
+    const matchesSearch = set.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         set.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = selectedCategory === "all" || set.category === selectedCategory
+    const matchesLevel = selectedLevel === "all" || set.level === selectedLevel
+    
+    return matchesSearch && matchesCategory && matchesLevel
   })
 
   const getLevelColor = (level: string) => {
     switch (level) {
-      case 'Beginner': return 'bg-green-100 text-green-800'
-      case 'Intermediate': return 'bg-yellow-100 text-yellow-800'
-      case 'Advanced': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case "Beginner":
+        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+      case "Intermediate":
+        return "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+      case "Advanced":
+        return "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+      default:
+        return "bg-gradient-to-r from-gray-500 to-slate-500 text-white"
     }
   }
 
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case "Business":
+        return <Target className="h-4 w-4" />
+      case "Academic":
+        return <GraduationCap className="h-4 w-4" />
+      case "Conversation":
+        return <MessageCircle className="h-4 w-4" />
+      case "Medical":
+        return <Heart className="h-4 w-4" />
+      case "Travel":
+        return <Globe className="h-4 w-4" />
+      case "Technology":
+        return <Zap className="h-4 w-4" />
+      default:
+        return <BookOpen className="h-4 w-4" />
+    }
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "Business":
+        return "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+      case "Academic":
+        return "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+      case "Conversation":
+        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+      case "Medical":
+        return "bg-gradient-to-r from-red-500 to-pink-500 text-white"
+      case "Travel":
+        return "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+      case "Technology":
+        return "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+      default:
+        return "bg-gradient-to-r from-gray-500 to-slate-500 text-white"
+    }
+  }
+
+  const getProgressColor = (progress: number) => {
+    if (progress === 0) return "bg-gray-200"
+    if (progress < 50) return "bg-red-500"
+    if (progress < 100) return "bg-yellow-500"
+    return "bg-green-500"
+  }
+
+  const getProgressText = (progress: number) => {
+    if (progress === 0) return "Chưa bắt đầu"
+    if (progress < 50) return "Đang học"
+    if (progress < 100) return "Gần hoàn thành"
+    return "Đã hoàn thành"
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-brand-50/30">
-      <div className="container mx-auto px-4 py-8">
-        {/* Page header */}
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-40 h-40 bg-gradient-to-br from-blue-200/20 to-cyan-200/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-20 left-1/4 w-48 h-48 bg-gradient-to-br from-amber-200/20 to-orange-200/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute top-1/2 right-1/3 w-24 h-24 bg-gradient-to-br from-green-200/20 to-emerald-200/20 rounded-full blur-3xl animate-pulse delay-1500"></div>
+        <div className="absolute top-1/3 left-1/3 w-36 h-36 bg-gradient-to-br from-indigo-200/20 to-purple-200/20 rounded-full blur-3xl animate-pulse delay-3000"></div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Hero Section */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-brand-100 text-brand-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Brain className="w-4 h-4" />
-            Học từ vựng thông minh
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-white/20">
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <Sparkles className="h-8 w-8 text-blue-600 animate-pulse" />
+                <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                  Vocabulary Builder
+                </h1>
+                <Sparkles className="h-8 w-8 text-purple-600 animate-pulse" />
+              </div>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Xây dựng vốn từ vựng tiếng Anh phong phú với các bộ từ chuyên ngành, 
+                phương pháp học hiệu quả và bài tập thực hành đa dạng
+              </p>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold font-display mb-6">
-            <span className="bg-gradient-to-r from-brand-600 via-brand-500 to-purple-600 bg-clip-text text-transparent">
-              Học từ vựng
-            </span>
-          </h1>
-          <p className="text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed">
-            Mở rộng vốn từ vựng với các bộ từ theo chủ đề và phương pháp học hiệu quả.
-            Sử dụng công nghệ Spaced Repetition để ghi nhớ lâu dài.
-          </p>
         </div>
 
-        {/* Study methods */}
+        {/* Search and Filters */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-center mb-8">Phương pháp học</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {studyMethods.map((method, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className={`w-16 h-16 bg-gradient-to-r ${method.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                    <method.icon className="w-8 h-8 text-white" />
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Tìm kiếm bộ từ vựng..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <div className="relative">
+                  <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all duration-300 appearance-none cursor-pointer"
+                  >
+                    {categories.map(category => (
+                      <option key={category} value={category}>
+                        {category === "all" ? "Tất cả danh mục" : category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Level Filter */}
+                <div className="relative">
+                  <Zap className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <select
+                    value={selectedLevel}
+                    onChange={(e) => setSelectedLevel(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all duration-300 appearance-none cursor-pointer"
+                  >
+                    {levels.map(level => (
+                      <option key={level} value={level}>
+                        {level === "all" ? "Tất cả cấp độ" : level}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        <div className="mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { icon: BookOpen, label: "Tổng bộ từ vựng", value: mockVocabularySets.length, color: "from-blue-500 to-cyan-500" },
+              { icon: Target, label: "Tổng từ vựng", value: mockVocabularySets.reduce((sum, set) => sum + set.wordCount, 0), color: "from-purple-500 to-pink-500" },
+              { icon: Brain, label: "Đã học", value: mockVocabularySets.filter(s => s.progress > 0).length, color: "from-amber-500 to-orange-500" },
+              { icon: Star, label: "Điểm trung bình", value: "4.8/5.0", color: "from-green-500 to-emerald-500" }
+            ].map((stat, index) => (
+              <div key={index} className="relative group">
+                <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700 opacity-30`}></div>
+                <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl p-6 text-center shadow-2xl border border-white/20 transform group-hover:scale-105 transition-all duration-500">
+                  <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${stat.color} text-white rounded-2xl mb-4 shadow-lg`}>
+                    <stat.icon className="h-8 w-8" />
                   </div>
-                  <h3 className="font-semibold mb-2">{method.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{method.description}</p>
-                </CardContent>
-              </Card>
+                  <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
+                  <div className="text-sm text-gray-600">{stat.label}</div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Stats section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <BookOpen className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold">5000+</div>
-              <div className="text-sm text-gray-600">Từ vựng</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold">15K+</div>
-              <div className="text-sm text-gray-600">Học viên</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <TrendingUp className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold">85%</div>
-              <div className="text-sm text-gray-600">Tỷ lệ ghi nhớ</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Target className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold">20</div>
-              <div className="text-sm text-gray-600">Từ/ngày</div>
-            </CardContent>
-          </Card>
+        {/* Featured Sets */}
+        <div className="mb-16">
+          <div className="flex items-center gap-3 mb-8">
+            <Crown className="h-8 w-8 text-amber-500" />
+            <h2 className="text-3xl font-bold text-gray-900">Bộ từ vựng nổi bật</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {mockVocabularySets.filter(set => set.isNew || set.isFree).map((set) => (
+              <div
+                key={set.id}
+                className="relative group"
+                onMouseEnter={() => setHoveredSet(set.id)}
+                onMouseLeave={() => setHoveredSet(null)}
+              >
+                <div className={`absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700`}></div>
+                <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-white/20 transform group-hover:scale-105 group-hover:-translate-y-2 transition-all duration-700">
+                  {/* New Badge */}
+                  {set.isNew && (
+                    <div className="absolute top-4 left-4 z-10">
+                      <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        New
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Free Badge */}
+                  {set.isFree && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <Badge className="bg-gradient-to-r from-blue-400 to-cyan-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Free
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Thumbnail */}
+                  <div className="relative h-48 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20"></div>
+                    <img 
+                      src={set.thumbnail} 
+                      alt={set.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300"></div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    {/* Category & Level */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge className={`${getCategoryColor(set.category)} px-2 py-1 rounded-full text-xs font-medium`}>
+                        {getCategoryIcon(set.category)}
+                        <span className="ml-1">{set.category}</span>
+                      </Badge>
+                      <Badge className={`${getLevelColor(set.level)} px-2 py-1 rounded-full text-xs font-medium`}>
+                        {set.level}
+                      </Badge>
+                    </div>
+
+                    {/* Title */}
+                    <CardTitle className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+                      {set.title}
+                    </CardTitle>
+
+                    {/* Description */}
+                    <CardDescription className="text-gray-600 mb-4 line-clamp-2">
+                      {set.description}
+                    </CardDescription>
+
+                    {/* Word Count & Progress */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                        <span>Từ vựng: {set.wordCount} từ</span>
+                        <span className="font-medium">{set.progress}%</span>
+                      </div>
+                      <Progress value={set.progress} className="h-2 bg-gray-200">
+                        <div 
+                          className="h-2 rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${set.progress}%`,
+                            backgroundColor: set.progress === 0 ? '#e5e7eb' : 
+                                           set.progress < 50 ? '#ef4444' : 
+                                           set.progress < 100 ? '#f59e0b' : '#10b981'
+                          }}
+                        />
+                      </Progress>
+                      <div className="text-xs text-gray-500 mt-1">{getProgressText(set.progress)}</div>
+                    </div>
+
+                    {/* Instructor */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <img 
+                        src={set.instructorAvatar} 
+                        alt={set.instructor}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                      <span className="text-sm text-gray-700 font-medium">{set.instructor}</span>
+                    </div>
+
+                    {/* Set Details */}
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>{set.duration}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>{set.students.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                        <span>{set.rating}</span>
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <Button 
+                      asChild
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl py-3 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                    >
+                      <Link href={`/vocabulary/${set.id}`}>
+                        {set.progress === 0 ? 'Bắt đầu học' : 
+                         set.progress < 100 ? 'Tiếp tục học' : 'Đã hoàn thành'}
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Search and filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Tìm kiếm bộ từ vựng..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline" className="lg:w-auto">
-              <Filter className="w-4 h-4 mr-2" />
-              Bộ lọc
-            </Button>
+        {/* All Sets */}
+        <div>
+          <div className="flex items-center gap-3 mb-8">
+            <BookOpen className="h-8 w-8 text-blue-500" />
+            <h2 className="text-3xl font-bold text-gray-900">Tất cả bộ từ vựng</h2>
           </div>
           
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium mb-2">Chủ đề:</h4>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category)}
-                    className="rounded-full"
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium mb-2">Trình độ:</h4>
-              <div className="flex flex-wrap gap-2">
-                {levels.map((level) => (
-                  <Button
-                    key={level}
-                    variant={selectedLevel === level ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedLevel(level)}
-                    className="rounded-full"
-                  >
-                    {level}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Results count */}
-        <div className="mb-6">
-          <p className="text-gray-600 dark:text-gray-300">
-            Tìm thấy <span className="font-semibold">{filteredSets.length}</span> bộ từ vựng
-          </p>
-        </div>
-
-        {/* Vocabulary sets grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSets.map((set) => (
-            <Card key={set.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+          {filteredSets.length === 0 ? (
+            <div className="text-center py-16">
               <div className="relative">
-                <img
-                  src={set.thumbnail}
-                  alt={set.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute top-4 left-4 flex gap-2">
-                  <Badge variant="secondary">{set.category}</Badge>
-                  {set.isNew && <Badge variant="destructive">Mới</Badge>}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+                <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-white/20">
+                  <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy bộ từ vựng</h3>
+                  <p className="text-gray-600 mb-6">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                  <Button 
+                    onClick={() => {
+                      setSearchTerm("")
+                      setSelectedCategory("all")
+                      setSelectedLevel("all")
+                    }}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl px-6 py-2"
+                  >
+                    Xóa bộ lọc
+                  </Button>
                 </div>
-                <div className="absolute top-4 right-4">
-                  <div className={`px-2 py-1 rounded text-xs font-medium ${getLevelColor(set.level)}`}>
-                    {set.level}
-                  </div>
-                </div>
-                {set.isFree && (
-                  <div className="absolute bottom-4 right-4">
-                    <Badge className="bg-green-600">Miễn phí</Badge>
-                  </div>
-                )}
               </div>
-              
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-2 line-clamp-2">
-                  {set.title}
-                </h3>
-                
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
-                  {set.description}
-                </p>
-                
-                {set.progress > 0 && (
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Tiến độ</span>
-                      <span>{set.progress}%</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredSets.map((set) => (
+                <div
+                  key={set.id}
+                  className="relative group"
+                  onMouseEnter={() => setHoveredSet(set.id)}
+                  onMouseLeave={() => setHoveredSet(null)}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700`}></div>
+                  <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-white/20 transform group-hover:scale-105 group-hover:-translate-y-2 transition-all duration-700">
+                    {/* Free Badge */}
+                    {set.isFree && (
+                      <div className="absolute top-4 right-4 z-10">
+                        <Badge className="bg-gradient-to-r from-blue-400 to-cyan-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Free
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Thumbnail */}
+                    <div className="relative h-48 overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20"></div>
+                      <img 
+                        src={set.thumbnail} 
+                        alt={set.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300"></div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full" 
-                        style={{ width: `${set.progress}%` }}
-                      ></div>
+
+                    {/* Content */}
+                    <div className="p-6">
+                      {/* Category & Level */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge className={`${getCategoryColor(set.category)} px-2 py-1 rounded-full text-xs font-medium`}>
+                          {getCategoryIcon(set.category)}
+                          <span className="ml-1">{set.category}</span>
+                        </Badge>
+                        <Badge className={`${getLevelColor(set.level)} px-2 py-1 rounded-full text-xs font-medium`}>
+                          {set.level}
+                        </Badge>
+                      </div>
+
+                      {/* Title */}
+                      <CardTitle className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+                        {set.title}
+                      </CardTitle>
+
+                      {/* Description */}
+                      <CardDescription className="text-gray-600 mb-4 line-clamp-2">
+                        {set.description}
+                      </CardDescription>
+
+                      {/* Word Count & Progress */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                          <span>Từ vựng: {set.wordCount} từ</span>
+                          <span className="font-medium">{set.progress}%</span>
+                        </div>
+                        <Progress value={set.progress} className="h-2 bg-gray-200">
+                          <div 
+                            className="h-2 rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${set.progress}%`,
+                              backgroundColor: set.progress === 0 ? '#e5e7eb' : 
+                                             set.progress < 50 ? '#ef4444' : 
+                                             set.progress < 100 ? '#f59e0b' : '#10b981'
+                            }}
+                          />
+                        </Progress>
+                        <div className="text-xs text-gray-500 mt-1">{getProgressText(set.progress)}</div>
+                      </div>
+
+                      {/* Instructor */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <img 
+                          src={set.instructorAvatar} 
+                          alt={set.instructor}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                        <span className="text-sm text-gray-700 font-medium">{set.instructor}</span>
+                      </div>
+
+                      {/* Set Details */}
+                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>{set.duration}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <span>{set.students.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                          <span>{set.rating}</span>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <Button 
+                        asChild
+                        variant="outline"
+                        className="w-full border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 rounded-2xl py-3 transform hover:scale-105 transition-all duration-300"
+                      >
+                        <Link href={`/vocabulary/${set.id}`}>
+                          {set.progress === 0 ? 'Bắt đầu học' : 
+                           set.progress < 100 ? 'Tiếp tục học' : 'Đã hoàn thành'}
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Link>
+                      </Button>
                     </div>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-2 gap-4 text-sm text-gray-500 mb-4">
-                  <div className="flex items-center">
-                    <BookOpen className="w-4 h-4 mr-1" />
-                    {set.wordCount} từ
-                  </div>
-                  <div className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {set.studyTime} phút
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="w-4 h-4 mr-1" />
-                    {set.completedBy} người học
-                  </div>
-                  <div className="flex items-center">
-                    <Star className="w-4 h-4 mr-1 text-yellow-400" />
-                    {set.rating}
                   </div>
                 </div>
-                
-                <Button className="w-full" asChild>
-                  <Link href={`/vocabulary/${set.id}`}>
-                    <Play className="w-4 h-4 mr-2" />
-                    {set.progress > 0 ? 'Tiếp tục học' : 'Bắt đầu học'}
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Empty state */}
-        {filteredSets.length === 0 && (
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Không tìm thấy bộ từ vựng
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
-            </p>
-          </div>
-        )}
-
-        {/* Daily challenge */}
-        <div className="mt-12 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-8">
-          <div className="text-center">
-            <Target className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-2">Thử thách hàng ngày</h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Học 10 từ mới mỗi ngày để cải thiện vốn từ vựng
-            </p>
-            <Button size="lg">
-              <Play className="w-5 h-5 mr-2" />
-              Bắt đầu thử thách
-            </Button>
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
