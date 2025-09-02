@@ -209,12 +209,12 @@ export default function VocabularyDetailPage() {
                 <span className="text-lg font-semibold text-gray-900">Tiến độ học tập</span>
                 <span className="text-sm text-gray-600">{getMasteredVocabulariesCount()} / {vocabularies.length}</span>
               </div>
-              <Progress value={progress} className="h-3 bg-gray-200">
+              <div className="w-full bg-gray-200 rounded-full h-3">
                 <div 
                   className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-blue-500 to-purple-600"
                   style={{ width: `${Math.min(progress, 100)}%` }}
                 />
-              </Progress>
+              </div>
                     </div>
                     </div>
                   </div>

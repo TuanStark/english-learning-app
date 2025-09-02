@@ -15,9 +15,10 @@ export function useGrammar() {
       setLoading(true);
       setError(null);
       const response = await grammarApi.getAll(params);
+      console.log('response', response);
       
-      if (response.data && Array.isArray(response.data)) {
-        setGrammarLessons(response.data);
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        setGrammarLessons(response.data.data);
       } else {
         console.warn('Unexpected grammar response structure:', response);
         setGrammarLessons([]);
@@ -70,15 +71,10 @@ export function useGrammar() {
     return grammarLessons.filter(lesson => lesson.difficultyLevel === difficulty);
   };
 
-  // Filter grammar lessons by category
-  const filterByCategory = (category: string) => {
-    return grammarLessons.filter(lesson => lesson.category === category);
-  };
-
-  // Get unique categories
-  const getCategories = () => {
-    const categories = new Set(grammarLessons.map(lesson => lesson.category));
-    return Array.from(categories);
+  // Get unique difficulty levels
+  const getDifficultyLevels = () => {
+    const levels = new Set(grammarLessons.map(lesson => lesson.difficultyLevel));
+    return Array.from(levels);
   };
 
   // Get grammar lessons by difficulty count
@@ -135,8 +131,7 @@ export function useGrammar() {
     
     // Utilities
     filterByDifficulty,
-    filterByCategory,
-    getCategories,
+    getDifficultyLevels,
     getGrammarByDifficultyCount,
     getTotalGrammarCount,
     getActiveGrammarLessons,

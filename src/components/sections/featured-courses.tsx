@@ -3,7 +3,36 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Clock, BookOpen, Star } from 'lucide-react'
-import { featuredCourses } from '@/lib/mock-data'
+// Mock data for featured courses
+const featuredCourses = [
+  {
+    id: 1,
+    title: "Tiếng Anh Cơ Bản",
+    description: "Khóa học dành cho người mới bắt đầu học tiếng Anh",
+    level: "Beginner",
+    duration: "8 tuần",
+    lessons: 24,
+    rating: 4.8
+  },
+  {
+    id: 2,
+    title: "Tiếng Anh Giao Tiếp",
+    description: "Học cách giao tiếp tự tin trong các tình huống thực tế",
+    level: "Intermediate",
+    duration: "10 tuần",
+    lessons: 30,
+    rating: 4.9
+  },
+  {
+    id: 3,
+    title: "Tiếng Anh Thương Mại",
+    description: "Tiếng Anh chuyên ngành cho môi trường công việc",
+    level: "Advanced",
+    duration: "12 tuần",
+    lessons: 36,
+    rating: 4.7
+  }
+]
 
 export default function FeaturedCourses() {
   return (

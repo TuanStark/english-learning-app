@@ -270,9 +270,7 @@ export default function GrammarDetailPage() {
                   <Badge className={`${getDifficultyColor(selectedGrammar.difficultyLevel)} px-4 py-2 text-lg`}>
                     {selectedGrammar.difficultyLevel}
                   </Badge>
-                  <Badge variant="outline" className="px-4 py-2">
-                    {selectedGrammar.category}
-                  </Badge>
+
                 </div>
 
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">
@@ -472,31 +470,8 @@ export default function GrammarDetailPage() {
             <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Bài ngữ pháp liên quan</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {grammarLessons
-                  .filter(g => g.id !== selectedGrammar.id && g.category === selectedGrammar.category)
-                  .slice(0, 3)
-                  .map((relatedGrammar) => (
-                    <div
-                      key={relatedGrammar.id}
-                      className="p-4 rounded-2xl border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all duration-300 cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900">{relatedGrammar.title}</h4>
-                        <Badge className={getDifficultyColor(relatedGrammar.difficultyLevel)}>
-                          {relatedGrammar.difficultyLevel}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {relatedGrammar.content.substring(0, 100)}...
-                      </p>
-                      <Button asChild variant="ghost" className="mt-3 p-0 h-auto text-purple-600 hover:text-purple-700">
-                        <Link href={`/grammar/${relatedGrammar.id}`}>
-                          Xem chi tiết →
-                        </Link>
-                      </Button>
-                      </div>
-                    ))}
-                  </div>
+                <p className="text-center text-gray-600">Bài ngữ pháp liên quan sẽ được cập nhật sau.</p>
+              </div>
             </div>
           </div>
         </div>

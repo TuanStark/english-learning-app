@@ -74,11 +74,27 @@ export interface Grammar {
   title: string;
   content: string;
   difficultyLevel: 'Easy' | 'Medium' | 'Hard';
-  category: string;
   orderIndex: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  examples?: GrammarExample[];
+  userProgress?: Array<{
+    id: number;
+    userId: number;
+    status: string;
+    masteryLevel: number;
+  }>;
+  _count?: {
+    examples: number;
+    userProgress: number;
+  };
+}
+
+export interface GrammarExample {
+  id: number;
+  englishSentence: string;
+  vietnameseSentence: string;
 }
 
 // Blog Types
@@ -235,13 +251,13 @@ class ApiClient {
   async getGrammar(params?: {
     difficultyLevel?: string;
     includeInactive?: boolean;
-  }): Promise<ApiResponse<Grammar[]>> {
+  }): Promise<ApiResponse<{ data: Grammar[]; meta: any }>> {
     const queryParams = new URLSearchParams();
     if (params?.difficultyLevel) queryParams.append('difficultyLevel', params.difficultyLevel);
     if (params?.includeInactive) queryParams.append('includeInactive', params.includeInactive.toString());
     
     const endpoint = `/grammar${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return this.request<Grammar[]>(endpoint);
+    return this.request<{ data: Grammar[]; meta: any }>(endpoint);
   }
 
   async searchGrammar(query: string): Promise<ApiResponse<Grammar[]>> {
