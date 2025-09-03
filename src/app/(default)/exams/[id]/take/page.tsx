@@ -2,159 +2,169 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import {
-  BookOpen,
-  Clock,
-  Target,
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle,
-  AlertCircle,
-  Play,
-  Pause,
-  Square,
-  Timer,
-  User,
-  FileText,
-  Check,
-  X,
-  Brain,
-  Zap,
-  Sparkles,
-  Award
-} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Clock, Play, Pause, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { Exam } from "@/types/global-type"
 
-interface ExamAttempt {
+interface Exam {
   id: number
-  userId: number
-  examId: number
-  score: number | null
-  completedAt: Date | null
-  answers: Record<number, number> // questionId -> selectedAnswerIndex
+  title: string
+  description: string
+  type: string
+  duration: number
+  difficulty: string
+  isActive: boolean
+  questions: Question[]
+}
+
+interface Question {
+  id: number
+  content: string
+  questionType: string
+  orderIndex: number
+  points: number
+  answerOptions: AnswerOption[]
+}
+
+interface AnswerOption {
+  id: number
+  content: string
+  isCorrect: boolean
+  optionLabel: string
 }
 
 export default function TakeExamPage() {
   const params = useParams()
   const router = useRouter()
+  const { data: session, status: sessionStatus } = useSession()
   const [exam, setExam] = useState<Exam | null>(null)
   const [questions, setQuestions] = useState<any[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
-  const [timeLeft, setTimeLeft] = useState(0)
   const [isStarted, setIsStarted] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [examAttemptId, setExamAttemptId] = useState<number | null>(null)
+  const [startTime, setStartTime] = useState<Date | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(0)
 
   const examId = params?.id as string
 
+  // Helper function to convert selectedAnswers to backend format
+  const convertAnswersToBackendFormat = (answers: Record<number, number>) => {
+    return Object.entries(answers).map(([questionIndex, answerIndex]) => {
+      const question = questions[parseInt(questionIndex)]
+      return {
+        questionId: question.id,
+        selectedOption: question.answerOptions[answerIndex]?.optionLabel || String.fromCharCode(65 + answerIndex)
+      }
+    })
+  }
+
   useEffect(() => {
-    const fetchExamAndQuestions = async () => {
-      if (!examId) return
-
+    const fetchExam = async () => {
       try {
-        setIsLoading(true)
-        setError(null)
-
-        // Fetch exam data
-        const examResponse = await fetch(`http://localhost:8001/exams/${examId}`)
-        if (!examResponse.ok) {
-          throw new Error(`HTTP error! status: ${examResponse.status}`)
-        }
-
-        const examData = await examResponse.json()
-        console.log('Exam response structure:', {
-          status: examResponse.status,
-          ok: examResponse.ok,
-          data: examData,
-          hasData: !!examData.data,
-          dataType: typeof examData.data,
-          dataKeys: examData.data ? Object.keys(examData.data) : 'no data',
-          'fullResponse': examData,
-          'responseKeys': Object.keys(examData)
-        })
-
-        // Try different response structures
-        let examToSet = null
-
-        if (examData.data) {
-          examToSet = examData.data
-        } else if (examData.exam) {
-          examToSet = examData.exam
-        } else if (examData.id) {
-          examToSet = examData
-        } else {
-          console.error('No exam data in response:', examData)
-          setError('Không thể tải dữ liệu đề thi')
-          return // Exit early if no exam data
-        }
-
-        if (examToSet) {
-          setExam(examToSet)
-          setTimeLeft(examToSet.duration * 60) // Convert minutes to seconds
-          console.log('Exam set successfully:', examToSet)
-        }
-
-        // Fetch questions
-        const questionsResponse = await fetch(`http://localhost:8001/exams/${examId}/questions`)
-        if (questionsResponse.ok) {
-          const questionsData = await questionsResponse.json()
-          console.log('Questions response:', questionsData)
+        const response = await fetch(`http://localhost:8001/exams/${examId}`)
+        if (response.ok) {
+          const examData = await response.json()
+          console.log('Exam response:', examData)
+          setExam(examData)
+          setTimeLeft(examData.duration * 60) // Convert minutes to seconds
           
-          if (questionsData.data) {
-            setQuestions(questionsData.data)
-          } else if (questionsData.questions) {
-            setQuestions(questionsData.questions)
-          } else if (Array.isArray(questionsData)) {
+          // Fetch questions for this exam
+          const questionsResponse = await fetch(`http://localhost:8001/exams/${examId}/questions`)
+          if (questionsResponse.ok) {
+            const questionsData = await questionsResponse.json()
+            console.log('Questions response:', questionsData)
             setQuestions(questionsData)
           } else {
-            console.error('Unexpected questions response structure:', questionsData)
+            console.error('Failed to fetch questions:', questionsResponse.status)
           }
         } else {
-          console.error('Failed to fetch questions:', questionsResponse.status)
+          console.error('Failed to fetch exam:', response.status)
+          setError('Failed to load exam')
         }
-
       } catch (error) {
-        console.error('Error fetching exam data:', error)
-        setError('Không thể tải dữ liệu đề thi. Vui lòng thử lại.')
+        console.error('Error fetching exam:', error)
+        setError('Error loading exam')
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchExamAndQuestions()
+    if (examId) {
+      fetchExam()
+    }
   }, [examId])
 
+  // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout
 
-    if (isStarted && !isPaused && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            handleSubmitExam()
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
+    if (isStarted && !isPaused && !isSubmitted && timeLeft > 0) {
+              interval = setInterval(() => {
+          setTimeLeft((prev: number) => {
+            if (prev <= 1) {
+              // Time's up, auto-submit
+              handleSubmitExam()
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
     }
 
     return () => {
-      if (interval) clearInterval(interval)
+      if (interval) {
+        clearInterval(interval)
+      }
     }
   }, [isStarted, isPaused, timeLeft])
 
-  const handleStartExam = () => {
+  // Create exam attempt when starting
+  const createExamAttempt = async () => {
+    if (!exam || !session?.user?.id) return
+
+    try {
+      const response = await fetch('http://localhost:8001/exam-attempts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: parseInt(session.user.id),
+          examId: parseInt(examId),
+          totalQuestions: questions.length,
+          status: 'InProgress',
+          detailedResult: JSON.stringify({ answers: {} })
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Attempt response:', data)
+        if (data.data?.id) {
+          setExamAttemptId(data.data.id)
+          console.log('Attempt set successfully:', data.data)
+        }
+      }
+    } catch (error) {
+      console.error('Error creating exam attempt:', error)
+    }
+  }
+
+  const handleStartExam = async () => {
+    await createExamAttempt()
     setIsStarted(true)
     setIsPaused(false)
+    setStartTime(new Date())
   }
 
   const handlePauseExam = () => {
@@ -183,40 +193,80 @@ export default function TakeExamPage() {
   const handleSubmitExam = async () => {
     if (!exam) return
 
+    setIsSubmitting(true)
+    console.log('Starting exam submission...')
+
     try {
-      // Calculate score based on answered questions
+      // Calculate score
       let correctAnswers = 0
       const totalQuestions = questionsToShow.length
 
-      // Check answers against backend questions
-      Object.keys(selectedAnswers).forEach((questionIndex) => {
-        const index = parseInt(questionIndex)
-        const question = questionsToShow[index]
-        const selectedAnswer = selectedAnswers[index]
-
-        if (question && question.answerOptions && question.answerOptions[selectedAnswer]) {
-          // Check if selected answer is correct
-          // Backend might use different field names, so we'll check multiple possibilities
-          const selectedOption = question.answerOptions[selectedAnswer]
-          if (selectedOption.isCorrect || selectedOption.correct || selectedOption.isCorrectAnswer) {
-            correctAnswers++
+      for (let i = 0; i < totalQuestions; i++) {
+        const selectedAnswer = selectedAnswers[i]
+        if (selectedAnswer !== undefined) {
+          const question = questionsToShow[i]
+          if (question && question.answerOptions && question.answerOptions[selectedAnswer]) {
+            // Check if selected answer is correct
+            const selectedOption = question.answerOptions[selectedAnswer]
+            if (selectedOption.isCorrect) {
+              correctAnswers++
+            }
           }
         }
-      })
+      }
 
       const score = Math.round((correctAnswers / totalQuestions) * 100)
+      const timeSpent = startTime ? Math.floor((new Date().getTime() - startTime.getTime()) / 1000) : 0
 
       console.log('Submitting exam with score:', score, 'correct:', correctAnswers, 'total:', totalQuestions)
 
-      setIsSubmitted(true)
+      // Convert answers to backend format
+      const answersArray = convertAnswersToBackendFormat(selectedAnswers)
+      console.log('Submitting answers in backend format:', answersArray)
 
-      // Redirect to results page after a short delay
-      setTimeout(() => {
-        router.push(`/exams/${examId}/results?score=${score}&total=${totalQuestions}&correct=${correctAnswers}`)
-      }, 2000)
+      // Submit to backend
+      if (examAttemptId) {
+        const submitResponse = await fetch(`http://localhost:8001/exam-attempts/${examAttemptId}/submit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            answers: answersArray,
+            timeSpent: timeSpent
+          }),
+        })
+
+        if (submitResponse.ok) {
+          const submitData = await submitResponse.json()
+          console.log('Exam submitted successfully:', submitData)
+          
+          // Get score from backend response
+          const backendScore = submitData.data?.score || score
+          const backendCorrect = submitData.data?.correctAnswers || correctAnswers
+          
+          setIsSubmitted(true)
+          setIsSubmitting(false)
+
+          // Redirect to results page
+          router.push(`/exams/${examId}/results?attemptId=${examAttemptId}&score=${backendScore}&total=${totalQuestions}&correct=${backendCorrect}&time=${timeSpent}`)
+        } else {
+          console.error('Failed to submit exam:', submitResponse.status)
+          // Fallback redirect
+          setIsSubmitted(true)
+          setIsSubmitting(false)
+          router.push(`/exams/${examId}/results?score=${score}&total=${totalQuestions}&correct=${correctAnswers}&time=${timeSpent}`)
+        }
+      } else {
+        // No attempt ID, redirect without it
+        setIsSubmitted(true)
+        setIsSubmitting(false)
+        router.push(`/exams/${examId}/results?score=${score}&total=${totalQuestions}&correct=${correctAnswers}&time=${timeSpent}`)
+      }
 
     } catch (error) {
       console.error('Error submitting exam:', error)
+      setIsSubmitting(false)
     }
   }
 
@@ -237,7 +287,6 @@ export default function TakeExamPage() {
   }
 
   if (isLoading) {
-    console.log('Rendering loading screen')
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -249,15 +298,50 @@ export default function TakeExamPage() {
               <div className="h-6 bg-gray-200 rounded w-1/3 mx-auto"></div>
             </div>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-8">
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
-              <div className="h-32 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if user is authenticated
+  if (sessionStatus === "loading") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-16">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 max-w-md mx-auto">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-6"></div>
+              <p className="text-gray-600 text-lg">Đang kiểm tra đăng nhập...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!session?.user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-16">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 max-w-md mx-auto">
+              <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Cần đăng nhập
+              </h3>
+              <p className="text-gray-600 mb-6 text-lg">
+                Bạn cần đăng nhập để làm bài thi này.
+              </p>
               <div className="space-y-3">
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+                <Button asChild className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600">
+                  <Link href="/auth">
+                    Đăng nhập ngay
+                  </Link>
+                </Button>
+                <Button onClick={() => router.back()} variant="outline" className="w-full rounded-xl">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Quay lại
+                </Button>
               </div>
             </div>
           </div>
@@ -267,7 +351,6 @@ export default function TakeExamPage() {
   }
 
   if (error || !exam) {
-    console.log('Rendering error screen because:', { error, exam: !!exam })
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -275,23 +358,15 @@ export default function TakeExamPage() {
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 max-w-md mx-auto">
               <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-6" />
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {error || 'Không tìm thấy đề thi'}
+                {error || 'Không tìm thấy bài thi'}
               </h3>
               <p className="text-gray-600 mb-6 text-lg">
-                {error || 'Đề thi bạn đang tìm kiếm không tồ tại hoặc đã bị xóa.'}
+                {error || 'Bài thi này không tồn tại hoặc đã bị xóa.'}
               </p>
-              <div className="space-y-3">
-                <Button onClick={() => router.back()} variant="outline" className="w-full rounded-xl">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Quay lại
-                </Button>
-                <Button asChild className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600">
-                  <Link href="/exams">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Xem tất cả đề thi
-                  </Link>
-                </Button>
-              </div>
+              <Button onClick={() => router.back()} variant="outline" className="w-full rounded-xl">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Quay lại
+              </Button>
             </div>
           </div>
         </div>
@@ -299,111 +374,61 @@ export default function TakeExamPage() {
     )
   }
 
-  // Pre-exam screen
   if (!isStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="text-gray-600 hover:text-gray-900 mb-6 rounded-xl"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Quay lại
-          </Button>
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {exam.title}
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              {exam.description}
+            </p>
+          </div>
 
-          <Card className="border-0 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white text-center">
-              <div className="inline-flex items-center gap-3 mb-4">
-                <Sparkles className="h-8 w-8" />
-                <h1 className="text-3xl font-bold">Exam Ready</h1>
-                <Sparkles className="h-8 w-8" />
-              </div>
-              <p className="text-blue-100 text-lg">Bạn đã sẵn sàng bắt đầu làm bài thi chưa?</p>
-            </div>
-
-            <CardContent className="p-8">
-              {/* Exam Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <BookOpen className="h-6 w-6 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Tên đề thi</p>
-                      <p className="font-semibold text-lg">{exam.title}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Target className="h-6 w-6 text-purple-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Loại đề</p>
-                      <p className="font-semibold text-lg">{exam.type || "CUSTOM"}</p>
-                    </div>
-                  </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                  <span className="text-gray-700">Thời gian: {exam.duration} phút</span>
                 </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-6 w-6 text-green-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Thời gian</p>
-                      <p className="font-semibold text-lg">{exam.duration} phút</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Zap className="h-6 w-6 text-amber-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Độ khó</p>
-                      <Badge className={`px-3 py-1 rounded-full font-medium ${
-                        exam.difficulty === "Easy" ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
-                        exam.difficulty === "Medium" ? "bg-amber-100 text-amber-700 border-amber-200" :
-                        "bg-rose-100 text-rose-700 border-rose-200"
-                      }`}>
-                        {exam.difficulty}
-                      </Badge>
-                    </div>
-                  </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-gray-700">Số câu hỏi: {totalQuestionsToShow}</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Badge variant="secondary">{exam.difficulty}</Badge>
+                  <span className="text-gray-700">Độ khó</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Badge variant="outline">{exam.type}</Badge>
+                  <span className="text-gray-700">Loại bài thi</span>
                 </div>
               </div>
 
-              {/* Instructions */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-                <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Hướng dẫn làm bài
-                </h3>
-                <ul className="space-y-2 text-blue-800 text-sm">
-                  <li>• Đọc kỹ câu hỏi trước khi chọn đáp án</li>
-                  <li>• Bạn có thể quay lại sửa đáp án bất cứ lúc nào</li>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Hướng dẫn:</h3>
+                <ul className="text-gray-600 space-y-2 text-sm">
+                  <li>• Đọc kỹ câu hỏi trước khi trả lời</li>
+                  <li>• Bạn có thể quay lại sửa câu trả lời</li>
                   <li>• Bài thi sẽ tự động nộp khi hết thời gian</li>
-                  <li>• Đảm bảo kết nối internet ổn định</li>
+                  <li>• Không thể thoát khỏi bài thi khi đã bắt đầu</li>
                 </ul>
               </div>
+            </div>
 
-              {/* Start Button */}
-              <div className="text-center">
-                <Button
-                  onClick={() => {
-                    console.log('Start button clicked!')
-                    handleStartExam()
-                  }}
-                  size="lg"
-                  className="px-12 py-4 text-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-bold transform hover:scale-105 transition-all duration-300"
-                  disabled={questions.length === 0}
-                >
-                  <Play className="h-6 w-6 mr-3" />
-                  {questions.length === 0 ? 'Đang tải câu hỏi...' : 'Bắt đầu làm bài'}
-                </Button>
-                {questions.length === 0 && (
-                  <p className="text-gray-500 mt-3">Vui lòng đợi hệ thống tải câu hỏi...</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            <div className="flex justify-center">
+              <Button 
+                onClick={handleStartExam}
+                className="px-8 py-3 text-lg rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <Play className="h-5 w-5 mr-2" />
+                Bắt đầu làm bài
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -415,16 +440,14 @@ export default function TakeExamPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-16">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 max-w-md mx-auto">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="h-10 w-10 text-white" />
-              </div>
+              <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-6" />
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                Đã nộp bài thi thành công!
+                Đã nộp bài thi
               </h3>
-              <p className="text-gray-600 mb-6">
-                Đang chuyển hướng đến trang kết quả...
+              <p className="text-gray-600 mb-6 text-lg">
+                Bài thi của bạn đã được nộp thành công. Đang chuyển hướng đến trang kết quả...
               </p>
-              <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             </div>
           </div>
         </div>
@@ -432,47 +455,30 @@ export default function TakeExamPage() {
     )
   }
 
-  console.log('Rendering exam screen - final return')
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-6">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="text-gray-600 hover:text-gray-900 mb-6 rounded-xl"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Quay lại
-        </Button>
-
         {/* Header */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-3">
-                <BookOpen className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{exam.title}</h1>
-                <p className="text-gray-600">Câu hỏi {currentQuestionIndex + 1} / {totalQuestionsToShow}</p>
-              </div>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{exam.title}</h1>
+              <p className="text-gray-600">Câu hỏi {currentQuestionIndex + 1} / {totalQuestionsToShow}</p>
             </div>
-
-            <div className="flex items-center gap-4">
-              {/* Timer */}
-              <div className="flex items-center gap-3 bg-red-50 border border-red-200 px-4 py-3 rounded-xl">
-                <Timer className="h-5 w-5 text-red-600" />
-                <span className={`font-mono text-lg font-bold ${timeLeft < 300 ? 'text-red-600' : 'text-gray-700'}`}>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <span className="font-mono text-lg font-semibold text-gray-900">
                   {formatTime(timeLeft)}
                 </span>
               </div>
-
-              {/* Pause/Resume */}
+              
               <Button
-                variant="outline"
-                size="lg"
                 onClick={handlePauseExam}
-                className="min-w-[120px] rounded-xl"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
               >
                 {isPaused ? (
                   <>
@@ -489,117 +495,114 @@ export default function TakeExamPage() {
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-              <span>Tiến độ làm bài</span>
-              <span>{answeredQuestions} / {totalQuestionsToShow} câu đã trả lời</span>
+          {/* Progress bar */}
+          <div className="mt-4">
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Tiến độ: {answeredQuestions} / {totalQuestionsToShow} câu đã trả lời</span>
+              <span>{Math.round(progress)}%</span>
             </div>
-            <Progress value={progress} className="h-3 rounded-full" />
+            <Progress value={progress} className="h-2" />
           </div>
         </div>
 
-        {/* Question Card */}
-        {currentQuestionToShow && (
-          <Card className="border-0 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                    {currentQuestionIndex + 1}
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl text-gray-900">Câu hỏi {currentQuestionIndex + 1}</CardTitle>
-                    <CardDescription className="text-gray-600">Chọn đáp án đúng nhất</CardDescription>
-                  </div>
-                </div>
-                <Badge variant="outline" className="px-3 py-1 rounded-full">
-                  {currentQuestionToShow.points || 1} điểm
-                </Badge>
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-6">
-              {/* Question Content */}
-              <div className="mb-8">
-                <p className="text-lg text-gray-800 leading-relaxed">
-                  {currentQuestionToShow.content}
-                </p>
-              </div>
-
-              {/* Answer Options */}
-              <div className="space-y-3">
-                {currentQuestionToShow.answerOptions?.map((option: any, index: number) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(currentQuestionIndex, index)}
-                    className={`w-full p-4 text-left rounded-xl border-2 transition-all duration-200 ${
-                      selectedAnswers[currentQuestionIndex] === index
-                        ? 'border-blue-500 bg-blue-50 text-blue-900'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        selectedAnswers[currentQuestionIndex] === index
-                          ? 'border-blue-500 bg-blue-500'
-                          : 'border-gray-300'
-                      }`}>
-                        {selectedAnswers[currentQuestionIndex] === index && (
-                          <Check className="h-4 w-4 text-white" />
-                        )}
-                      </div>
-                      <span className="font-medium text-gray-700">
-                        {option.optionLabel}. {option.content}
-                      </span>
+        {/* Question */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-8 mb-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Câu {currentQuestionIndex + 1}: {currentQuestionToShow?.content}
+            </h2>
+            
+            <div className="space-y-3">
+              {currentQuestionToShow?.answerOptions?.map((option: AnswerOption, optionIndex: number) => (
+                <button
+                  key={option.id}
+                  onClick={() => handleAnswerSelect(currentQuestionIndex, optionIndex)}
+                  className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                    selectedAnswers[currentQuestionIndex] === optionIndex
+                      ? 'border-blue-500 bg-blue-50 text-blue-900'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      selectedAnswers[currentQuestionIndex] === optionIndex
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedAnswers[currentQuestionIndex] === optionIndex && (
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                      )}
                     </div>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    <span className="font-medium">{option.optionLabel}.</span>
+                    <span>{option.content}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-8">
-          <Button
-            onClick={handlePrevQuestion}
-            disabled={currentQuestionIndex === 0}
-            variant="outline"
-            size="lg"
-            className="rounded-xl px-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Câu trước
-          </Button>
-
-          <div className="flex items-center gap-3">
-            <span className="text-gray-600">
-              {currentQuestionIndex + 1} / {totalQuestionsToShow}
-            </span>
-          </div>
-
-          {currentQuestionIndex === totalQuestionsToShow - 1 ? (
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex justify-between items-center">
             <Button
-              onClick={handleSubmitExam}
-              size="lg"
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl px-8"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Nộp bài
-            </Button>
-          ) : (
-            <Button
-              onClick={handleNextQuestion}
-              disabled={currentQuestionIndex === totalQuestionsToShow - 1}
+              onClick={handlePrevQuestion}
+              disabled={currentQuestionIndex === 0}
               variant="outline"
-              size="lg"
-              className="rounded-xl px-6"
+              className="rounded-xl"
             >
-              Câu tiếp
-              <ArrowRight className="h-4 w-4 ml-2" />
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Câu trước
             </Button>
-          )}
+
+            <div className="flex space-x-3">
+              {Array.from({ length: totalQuestionsToShow }, (_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentQuestionIndex(index)}
+                  className={`w-10 h-10 rounded-lg border-2 text-sm font-medium transition-all ${
+                    index === currentQuestionIndex
+                      ? 'border-blue-500 bg-blue-500 text-white'
+                      : selectedAnswers[index] !== undefined
+                      ? 'border-green-500 bg-green-100 text-green-700'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex space-x-3">
+              {currentQuestionIndex < totalQuestionsToShow - 1 ? (
+                <Button
+                  onClick={handleNextQuestion}
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  Câu tiếp
+                  <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmitExam}
+                  disabled={isSubmitting}
+                  className="rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Đang nộp bài...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Nộp bài
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

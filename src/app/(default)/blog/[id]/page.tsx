@@ -227,7 +227,7 @@ export default function BlogDetailPage() {
                     className="flex items-center gap-2"
                   >
                     <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
-                    {selectedPost.likeCount + (liked ? 1 : 0)}
+                    {selectedPost.likeCount ? selectedPost.likeCount + (liked ? 1 : 0) : 0}
                   </Button>
 
                   <Button
@@ -306,10 +306,10 @@ export default function BlogDetailPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
               <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
                 {/* Featured Image */}
-                {selectedPost.image && (
+                {selectedPost.featuredImage  && (
                   <div className="mb-8">
                     <img
-                      src={selectedPost.image}
+                      src={selectedPost.featuredImage}
                       alt={selectedPost.title}
                       className="w-full h-64 md:h-96 object-cover rounded-2xl"
                     />
@@ -450,9 +450,9 @@ export default function BlogDetailPage() {
                     {relatedPosts.map((post) => (
                       <div key={post.id} className="group cursor-pointer">
                         <div className="flex gap-3">
-                          {post.image && (
+                            {post.featuredImage && (
                             <img
-                              src={post.image}
+                              src={post.featuredImage}
                               alt={post.title}
                               className="w-16 h-16 object-cover rounded-lg"
                             />

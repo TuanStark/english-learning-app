@@ -153,7 +153,7 @@ export function useBlog() {
 
   // Get blog posts by category name
   const getPostsByCategoryName = (categoryName: string) => {
-    const category = categories.find(cat => cat.name === categoryName);
+    const category = categories.find(cat => cat.categoryName === categoryName);
     if (category) {
       return blogPosts.filter(post => post.categoryId === category.id);
     }

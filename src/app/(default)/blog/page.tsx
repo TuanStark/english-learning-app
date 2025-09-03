@@ -30,125 +30,64 @@ import {
   CheckCircle,
   MessageCircle,
   BookMarked,
-  Flame
+  Flame,
+  User
 } from "lucide-react"
 import Link from "next/link"
+import { useBlog } from '@/hooks/useBlog'
 
-// Mock data for blog posts
-const mockBlogPosts = [
-  {
-    id: 1,
-    title: "10 Tips để đạt điểm cao IELTS Speaking: Hướng dẫn chi tiết từ chuyên gia",
-    excerpt: "Khám phá những bí quyết giúp bạn tự tin và đạt điểm cao trong phần thi IELTS Speaking. Bài viết này sẽ cung cấp cho bạn 10 tips quan trọng nhất từ các chuyên gia IELTS hàng đầu.",
-    author: "Sarah Johnson",
-    authorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-    category: "Tips & Tricks",
-    readTime: 12,
-    views: 1250,
-    likes: 89,
-    comments: 23,
-    publishedAt: "2024-01-15",
-    thumbnail: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=250&fit=crop",
-    isFeatured: true,
-    tags: ["IELTS", "Speaking", "Tips", "Test Preparation"]
-  },
-  {
-    id: 2,
-    title: "5 lỗi ngữ pháp phổ biến cần tránh trong IELTS",
-    excerpt: "Tìm hiểu những lỗi ngữ pháp thường gặp và cách khắc phục hiệu quả để đạt điểm cao trong kỳ thi IELTS.",
-    author: "Michael Chen",
-    authorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-    category: "Grammar Guide",
-    readTime: 8,
-    views: 890,
-    likes: 67,
-    comments: 15,
-    publishedAt: "2024-01-12",
-    thumbnail: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=250&fit=crop",
-    isFeatured: false,
-    tags: ["IELTS", "Grammar", "Common Mistakes", "Test Preparation"]
-  },
-  {
-    id: 3,
-    title: "Hướng dẫn chi tiết IELTS Writing Task 2",
-    excerpt: "Phân tích cấu trúc và chiến lược viết bài hiệu quả cho IELTS Writing Task 2 với các ví dụ thực tế.",
-    author: "Emma Wilson",
-    authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-    category: "Test Preparation",
-    readTime: 15,
-    views: 2100,
-    likes: 156,
-    comments: 34,
-    publishedAt: "2024-01-10",
-    thumbnail: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=250&fit=crop",
-    isFeatured: true,
-    tags: ["IELTS", "Writing", "Task 2", "Test Preparation"]
-  },
-  {
-    id: 4,
-    title: "Cách học từ vựng hiệu quả: Phương pháp Spaced Repetition",
-    excerpt: "Khám phá phương pháp học từ vựng hiệu quả dựa trên khoa học về trí nhớ và cách áp dụng vào thực tế.",
-    author: "David Thompson",
-    authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    category: "Learning Methods",
-    readTime: 10,
-    views: 1560,
-    likes: 123,
-    comments: 28,
-    publishedAt: "2024-01-08",
-    thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop",
-    isFeatured: false,
-    tags: ["Vocabulary", "Learning Methods", "Memory", "Study Tips"]
-  },
-  {
-    id: 5,
-    title: "Business English: Từ vựng và cụm từ cần thiết cho công sở",
-    excerpt: "Làm chủ 100+ từ vựng và cụm từ tiếng Anh thương mại cần thiết cho môi trường công sở chuyên nghiệp.",
-    author: "Lisa Park",
-    authorAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
-    category: "Business English",
-    readTime: 12,
-    views: 980,
-    likes: 78,
-    comments: 19,
-    publishedAt: "2024-01-05",
-    thumbnail: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=250&fit=crop",
-    isFeatured: false,
-    tags: ["Business English", "Vocabulary", "Workplace", "Professional"]
-  },
-  {
-    id: 6,
-    title: "Luyện nghe tiếng Anh: Chiến lược và bài tập thực hành",
-    excerpt: "Cải thiện kỹ năng nghe tiếng Anh với các chiến lược hiệu quả và bài tập thực hành đa dạng.",
-    author: "Maria Garcia",
-    authorAvatar: "https://images.unsplash.com/photo-1548142813-c348350df52b?w=150&h=150&fit=crop&crop=face",
-    category: "Listening Skills",
-    readTime: 14,
-    views: 1340,
-    likes: 95,
-    comments: 22,
-    publishedAt: "2024-01-03",
-    thumbnail: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=250&fit=crop",
-    isFeatured: false,
-    tags: ["Listening", "English Skills", "Practice", "Study Methods"]
-  }
-]
+
 
 export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [hoveredPost, setHoveredPost] = useState<number | null>(null)
+  
+  const { blogPosts, categories, loading, error, loadPublishedPosts } = useBlog()
 
-  const categories = ["all", "Tips & Tricks", "Grammar Guide", "Test Preparation", "Learning Methods", "Business English", "Listening Skills"]
+  // Load published posts on component mount
+  useEffect(() => {
+    loadPublishedPosts()
+  }, [])
 
-  const filteredPosts = mockBlogPosts.filter(post => {
+  const filteredPosts = blogPosts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.author.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || post.category === selectedCategory
+                         (post.excerpt && post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesCategory = selectedCategory === "all" || post.category?.categoryName === selectedCategory
     
     return matchesSearch && matchesCategory
   })
+
+  // Get unique category names for filter
+  const categoryNames = ["all", ...(categories.map(cat => cat.categoryName) || [])]
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải bài viết blog...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Đã xảy ra lỗi</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Thử lại
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -255,7 +194,7 @@ export default function BlogPage() {
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all duration-300 appearance-none cursor-pointer"
                   >
-                    {categories.map(category => (
+                    {categoryNames.map(category => (
                       <option key={category} value={category}>
                         {category === "all" ? "Tất cả danh mục" : category}
                       </option>
@@ -271,10 +210,10 @@ export default function BlogPage() {
         <div className="mb-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: BookOpen, label: "Tổng bài viết", value: mockBlogPosts.length, color: "from-blue-500 to-cyan-500" },
-              { icon: Eye, label: "Tổng lượt xem", value: mockBlogPosts.reduce((sum, post) => sum + post.views, 0), color: "from-purple-500 to-pink-500" },
-              { icon: Users, label: "Tác giả", value: 6, color: "from-amber-500 to-orange-500" },
-              { icon: Heart, label: "Lượt thích", value: mockBlogPosts.reduce((sum, post) => sum + post.likes, 0), color: "from-green-500 to-emerald-500" }
+              { icon: BookOpen, label: "Tổng bài viết", value: blogPosts.length, color: "from-blue-500 to-cyan-500" },
+              { icon: Eye, label: "Tổng lượt xem", value: blogPosts.reduce((sum, post) => sum + (post.viewCount || 0), 0), color: "from-purple-500 to-pink-500" },
+              { icon: Users, label: "Tác giả", value: new Set(blogPosts.map(post => post.authorId)).size, color: "from-amber-500 to-orange-500" },
+              { icon: Heart, label: "Lượt thích", value: blogPosts.reduce((sum, post) => sum + (post.likeCount || 0), 0), color: "from-green-500 to-emerald-500" }
             ].map((stat, index) => (
               <div key={index} className="relative group">
                 <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700 opacity-30`}></div>
@@ -297,7 +236,7 @@ export default function BlogPage() {
             <h2 className="text-3xl font-bold text-gray-900">Bài viết nổi bật</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mockBlogPosts.filter(post => post.isFeatured).map((post) => (
+            {blogPosts.slice(0, 3).map((post) => (
               <div
                 key={post.id}
                 className="relative group"
@@ -317,11 +256,17 @@ export default function BlogPage() {
                   {/* Thumbnail */}
                   <div className="relative h-48 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20"></div>
-                    <img 
-                      src={post.thumbnail} 
-                      alt={post.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
+                    {post.featuredImage ? (
+                      <img 
+                        src={post.featuredImage} 
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="h-16 w-16 text-blue-600" />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300"></div>
                   </div>
 
@@ -329,9 +274,9 @@ export default function BlogPage() {
                   <div className="p-6">
                     {/* Category */}
                     <div className="flex items-center gap-2 mb-3">
-                      <Badge className={`${getCategoryColor(post.category)} px-2 py-1 rounded-full text-xs font-medium`}>
-                        {getCategoryIcon(post.category)}
-                        <span className="ml-1">{post.category}</span>
+                      <Badge className={`${getCategoryColor(post.category?.categoryName || 'General')} px-2 py-1 rounded-full text-xs font-medium`}>
+                        {getCategoryIcon(post.category?.categoryName || 'General')}
+                        <span className="ml-1">{post.category?.categoryName || 'General'}</span>
                       </Badge>
                     </div>
 
@@ -341,44 +286,46 @@ export default function BlogPage() {
                     </CardTitle>
 
                     {/* Excerpt */}
-                    <CardDescription className="text-gray-600 mb-4 line-clamp-3">
-                      {post.excerpt}
-                    </CardDescription>
+                    {post.excerpt && (
+                      <CardDescription className="text-gray-600 mb-4 line-clamp-3">
+                        {post.excerpt}
+                      </CardDescription>
+                    )}
 
                     {/* Author */}
                     <div className="flex items-center gap-3 mb-4">
-                      <img 
-                        src={post.authorAvatar} 
-                        alt={post.author}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                      <span className="text-sm text-gray-700 font-medium">{post.author}</span>
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <User className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <span className="text-sm text-gray-700 font-medium">{post.author?.fullName || `Author #${post.authorId}`}</span>
                     </div>
 
                     {/* Post Stats */}
                     <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
-                        <span>{post.readTime} phút</span>
+                        <span>{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('vi-VN') : 'Draft'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Eye className="h-4 w-4" />
-                        <span>{post.views.toLocaleString()}</span>
+                        <span>{post.viewCount || 0}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Heart className="h-4 w-4 text-red-500" />
-                        <span>{post.likes}</span>
+                        <span>{post.likeCount || 0}</span>
                       </div>
                     </div>
 
                     {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {post.tags.slice(0, 3).map((tag, index) => (
-                        <Badge key={index} variant="outline" className="px-2 py-1 rounded-full text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {post.tags.slice(0, 3).map((tag, index) => (
+                          <Badge key={index} variant="outline" className="px-2 py-1 rounded-full text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Action Button */}
                     <Button 
@@ -438,11 +385,17 @@ export default function BlogPage() {
                     {/* Thumbnail */}
                     <div className="relative h-48 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20"></div>
-                      <img 
-                        src={post.thumbnail} 
-                        alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
+                      {post.featuredImage ? (
+                        <img 
+                          src={post.featuredImage} 
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="h-16 w-16 text-blue-600" />
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300"></div>
                     </div>
 
@@ -450,9 +403,9 @@ export default function BlogPage() {
                     <div className="p-6">
                       {/* Category */}
                       <div className="flex items-center gap-2 mb-3">
-                        <Badge className={`${getCategoryColor(post.category)} px-2 py-1 rounded-full text-xs font-medium`}>
-                          {getCategoryIcon(post.category)}
-                          <span className="ml-1">{post.category}</span>
+                        <Badge className={`${getCategoryColor(post.category?.categoryName || 'General')} px-2 py-1 rounded-full text-xs font-medium`}>
+                          {getCategoryIcon(post.category?.categoryName || 'General')}
+                          <span className="ml-1">{post.category?.categoryName || 'General'}</span>
                         </Badge>
                       </div>
 
@@ -462,44 +415,46 @@ export default function BlogPage() {
                       </CardTitle>
 
                       {/* Excerpt */}
-                      <CardDescription className="text-gray-600 mb-4 line-clamp-3">
-                        {post.excerpt}
-                      </CardDescription>
+                      {post.excerpt && (
+                        <CardDescription className="text-gray-600 mb-4 line-clamp-3">
+                          {post.excerpt}
+                        </CardDescription>
+                      )}
 
                       {/* Author */}
                       <div className="flex items-center gap-3 mb-4">
-                        <img 
-                          src={post.authorAvatar} 
-                          alt={post.author}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                        <span className="text-sm text-gray-700 font-medium">{post.author}</span>
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">{post.author?.fullName || `Author #${post.authorId}`}</span>
                       </div>
 
                       {/* Post Stats */}
                       <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
-                          <span>{post.readTime} phút</span>
+                          <span>{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('vi-VN') : 'Draft'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Eye className="h-4 w-4" />
-                          <span>{post.views.toLocaleString()}</span>
+                          <span>{post.viewCount || 0}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Heart className="h-4 w-4 text-red-500" />
-                          <span>{post.likes}</span>
+                          <span>{post.likeCount || 0}</span>
                         </div>
                       </div>
 
                       {/* Tags */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {post.tags.slice(0, 3).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="px-2 py-1 rounded-full text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
+                      {post.tags && post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {post.tags.slice(0, 3).map((tag, index) => (
+                            <Badge key={index} variant="outline" className="px-2 py-1 rounded-full text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Action Button */}
                       <Button 

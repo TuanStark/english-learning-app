@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 const navigation = [
   { name: 'Trang chủ', href: '/' },
   { name: 'Luyện đề', href: '/exams' },
-  { name: 'Khóa học', href: '/courses' },
+  // { name: 'Khóa học', href: '/courses' },
   { name: 'Từ vựng', href: '/vocabulary' },
   { name: 'Ngữ pháp', href: '/grammar' },
   // { name: 'Lộ trình', href: '/roadmap' },

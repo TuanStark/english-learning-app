@@ -44,6 +44,10 @@ export interface Role {
     updatedAt: string;
     questions?: Question[];
     examAttempts?: ExamAttempt[];
+    _count : {
+      questions: number,
+      examAttempts: number
+    }
   }
   
   // Question

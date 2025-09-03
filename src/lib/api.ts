@@ -100,36 +100,52 @@ export interface GrammarExample {
 // Blog Types
 export interface BlogCategory {
   id: number;
-  name: string;
+  categoryName: string;
   slug: string;
   description?: string;
   image?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BlogPost {
   id: number;
   title: string;
   slug: string;
-  excerpt: string;
+  excerpt?: string;
   content: string;
   authorId: number;
   categoryId: number;
   status: 'Draft' | 'Published' | 'Archived';
   publishedAt?: string;
-  image?: string;
-  tags: string[];
-  viewCount: number;
-  likeCount: number;
-  commentCount: number;
+  featuredImage?: string;
+  tags?: string[];
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
   author?: {
     id: number;
     fullName: string;
     avatar?: string;
   };
   category?: BlogCategory;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BlogComment {
+  id: number;
+  content: string;
+  blogPostId: number;
+  userId: number;
+  parentCommentId?: number;
+  user?: {
+    id: number;
+    fullName: string;
+    avatar?: string;
+  };
+  replies?: BlogComment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -299,6 +315,37 @@ class ApiClient {
     return this.request<BlogPost>(`/blog-posts/slug/${slug}`);
   }
 
+  async getBlogPostById(id: number): Promise<ApiResponse<BlogPost>> {
+    return this.request<BlogPost>(`/blog-posts/${id}`);
+  }
+
+  async getBlogPostStats(id: number): Promise<ApiResponse<any>> {
+    return this.request<any>(`/blog-posts/${id}/stats`);
+  }
+
+  // Blog Comments API
+  async getBlogComments(params?: {
+    blogPostId?: number;
+    userId?: number;
+    parentCommentId?: number;
+  }): Promise<ApiResponse<BlogComment[]>> {
+    const queryParams = new URLSearchParams();
+    if (params?.blogPostId) queryParams.append('blogPostId', params.blogPostId.toString());
+    if (params?.userId) queryParams.append('userId', params.userId.toString());
+    if (params?.parentCommentId) queryParams.append('parentCommentId', params.parentCommentId.toString());
+    
+    const endpoint = `/blog-comments${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return this.request<BlogComment[]>(endpoint);
+  }
+
+  async getCommentsByPost(blogPostId: number): Promise<ApiResponse<BlogComment[]>> {
+    return this.request<BlogComment[]>(`/blog-comments/post/${blogPostId}`);
+  }
+
+  async getCommentStats(blogPostId: number): Promise<ApiResponse<any>> {
+    return this.request<any>(`/blog-comments/post/${blogPostId}/stats`);
+  }
+
   // Course API (if available)
   async getCourses(): Promise<ApiResponse<Course[]>> {
     return this.request<Course[]>('/courses');
@@ -347,6 +394,11 @@ export const blogApi = {
   getPublished: () => apiClient.getPublishedBlogPosts(),
   search: (query: string) => apiClient.searchBlogPosts(query),
   getBySlug: (slug: string) => apiClient.getBlogPostBySlug(slug),
+  getById: (id: number) => apiClient.getBlogPostById(id),
+  getStats: (id: number) => apiClient.getBlogPostStats(id),
+  getComments: (params?: any) => apiClient.getBlogComments(params),
+  getCommentsByPost: (blogPostId: number) => apiClient.getCommentsByPost(blogPostId),
+  getCommentStats: (blogPostId: number) => apiClient.getCommentStats(blogPostId),
 };
 
 export const courseApi = {

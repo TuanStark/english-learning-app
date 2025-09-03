@@ -291,7 +291,7 @@ export default function ExamsPage() {
                   
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4 text-green-500" />
-                    <span>0 người đã làm</span>
+                    <span>{exam._count.examAttempts} người đã làm</span>
                   </div>
                 </div>
 
