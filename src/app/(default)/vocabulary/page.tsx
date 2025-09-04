@@ -6,13 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import { 
-  Search, 
-  Filter, 
-  BookOpen, 
-  Users, 
-  Star, 
-  Clock, 
+import {
+  Search,
+  Filter,
+  BookOpen,
+  Users,
+  Star,
+  Clock,
   Play,
   Sparkles,
   Brain,
@@ -55,28 +55,51 @@ export default function VocabularyPage() {
   const [hoveredSet, setHoveredSet] = useState<number | null>(null)
 
   // Transform backend data to match UI structure
-  const vocabularySets = topics.map(topic => {
+  const vocabularySets = topics.filter(topic => topic.isActive).map(topic => {
     const topicVocabularies = vocabularies.filter(vocab => vocab.topicId === topic.id);
-    
+
+    // Calculate difficulty level based on vocabulary difficulty distribution
+    const difficultyCounts = topicVocabularies.reduce((acc, vocab) => {
+      acc[vocab.difficultyLevel] = (acc[vocab.difficultyLevel] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const totalVocabs = topicVocabularies.length;
+    const hardPercentage = (difficultyCounts.Hard || 0) / totalVocabs;
+    const mediumPercentage = (difficultyCounts.Medium || 0) / totalVocabs;
+
+    let level = "Beginner";
+    if (hardPercentage > 0.3 || totalVocabs > 100) {
+      level = "Advanced";
+    } else if (mediumPercentage > 0.4 || totalVocabs > 50) {
+      level = "Intermediate";
+    }
+
+    // Calculate estimated duration based on word count (assuming 20 words per week)
+    const weeks = Math.max(1, Math.ceil(totalVocabs / 20));
+
     return {
       id: topic.id,
       title: topic.topicName,
       description: topic.description || `Học từ vựng về chủ đề ${topic.topicName}`,
-      instructor: "System Generated",
+      instructor: "Hệ thống",
       instructorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-      level: topicVocabularies.length > 100 ? "Advanced" : topicVocabularies.length > 50 ? "Intermediate" : "Beginner",
+      level: level,
       category: topic.topicName,
-      wordCount: topicVocabularies.length,
-      duration: `${Math.ceil(topicVocabularies.length / 20)} weeks`,
-      students: Math.floor(Math.random() * 2000) + 100,
-      rating: 4.5 + Math.random() * 0.5,
-      reviews: Math.floor(Math.random() * 200) + 20,
-      progress: Math.floor(Math.random() * 100),
-      isNew: topic.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      wordCount: totalVocabs,
+      duration: `${weeks} tuần`,
+      students: Math.floor(Math.random() * 2000) + 100, // This would come from user progress data
+      rating: 4.5 + Math.random() * 0.5, // This would come from user feedback
+      reviews: Math.floor(Math.random() * 200) + 20, // This would come from user feedback
+      progress: 0, // This would come from user progress data
+      isNew: new Date(topic.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       isFree: topic.orderIndex <= 3,
       thumbnail: topic.image || "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=250&fit=crop",
       features: ["Flashcards", "Audio Pronunciation", "Practice Tests", "Progress Tracking"],
-      tags: [topic.topicName, "Vocabulary", "English Learning"]
+      tags: [topic.topicName, "Vocabulary", "English Learning"],
+      difficultyCounts: difficultyCounts,
+      createdAt: topic.createdAt,
+      updatedAt: topic.updatedAt
     };
   });
 
@@ -86,10 +109,10 @@ export default function VocabularyPage() {
 
   const filteredSets = vocabularySets.filter(set => {
     const matchesSearch = set.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         set.description.toLowerCase().includes(searchTerm.toLowerCase())
+      set.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === "all" || set.category === selectedCategory
     const matchesLevel = selectedLevel === "all" || set.level === selectedLevel
-    
+
     return matchesSearch && matchesCategory && matchesLevel
   })
 
@@ -183,7 +206,7 @@ export default function VocabularyPage() {
                 <Sparkles className="h-8 w-8 text-purple-600 animate-pulse" />
               </div>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                Xây dựng vốn từ vựng tiếng Anh phong phú với các bộ từ chuyên ngành, 
+                Xây dựng vốn từ vựng tiếng Anh phong phú với các bộ từ chuyên ngành,
                 phương pháp học hiệu quả và bài tập thực hành đa dạng
               </p>
             </div>
@@ -197,24 +220,24 @@ export default function VocabularyPage() {
             <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <div className="relative border-2 border-gray-400 rounded-2xl">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-800 font-bold" />
                   <Input
                     type="text"
                     placeholder="Tìm kiếm bộ từ vựng..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                    className="pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:ring-0 focus:ring-offset-0 focus:outline-none focus:border-0"
                   />
                 </div>
-                
+
                 {/* Category Filter */}
-                <div className="relative">
-                  <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <div className="relative border-2 border-gray-400 rounded-2xl">
+                  <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-800 font-bold" />
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all duration-300 appearance-none cursor-pointer"
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:ring-0 focus:ring-offset-0 focus:outline-none focus:border-0 appearance-none cursor-pointer"
                   >
                     {categories.map(category => (
                       <option key={category} value={category}>
@@ -225,12 +248,12 @@ export default function VocabularyPage() {
                 </div>
 
                 {/* Level Filter */}
-                <div className="relative">
-                  <Zap className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <div className="relative border-2 border-gray-400 rounded-2xl">
+                  <Zap className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-800 font-bold" />
                   <select
                     value={selectedLevel}
                     onChange={(e) => setSelectedLevel(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all duration-300 appearance-none cursor-pointer"
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:ring-0 focus:ring-offset-0 focus:outline-none focus:border-0 appearance-none cursor-pointer"
                   >
                     {levels.map(level => (
                       <option key={level} value={level}>
@@ -248,10 +271,30 @@ export default function VocabularyPage() {
         <div className="mb-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: BookOpen, label: "Tổng bộ từ vựng", value: vocabularySets.length, color: "from-blue-500 to-cyan-500" },
-              { icon: Target, label: "Tổng từ vựng", value: getTotalVocabulariesCount(), color: "from-purple-500 to-pink-500" },
-              { icon: Brain, label: "Đã học", value: vocabularySets.filter(s => s.progress > 0).length, color: "from-amber-500 to-orange-500" },
-              { icon: Star, label: "Điểm trung bình", value: "4.8/5.0", color: "from-green-500 to-emerald-500" }
+              {
+                icon: BookOpen,
+                label: "Tổng chủ đề",
+                value: vocabularySets.length,
+                color: "from-blue-500 to-cyan-500"
+              },
+              {
+                icon: Target,
+                label: "Tổng từ vựng",
+                value: getTotalVocabulariesCount(),
+                color: "from-purple-500 to-pink-500"
+              },
+              {
+                icon: Brain,
+                label: "Từ khó",
+                value: getVocabulariesByDifficultyCount().Hard,
+                color: "from-amber-500 to-orange-500"
+              },
+              {
+                icon: Star,
+                label: "Từ dễ",
+                value: getVocabulariesByDifficultyCount().Easy,
+                color: "from-green-500 to-emerald-500"
+              }
             ].map((stat, index) => (
               <div key={index} className="relative group">
                 <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700 opacity-30`}></div>
@@ -304,7 +347,7 @@ export default function VocabularyPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Lỗi khi tải dữ liệu</h3>
                 <p className="text-gray-600 mb-6">{error}</p>
-                <Button 
+                <Button
                   onClick={() => window.location.reload()}
                   className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white rounded-2xl px-6 py-2"
                 >
@@ -314,7 +357,7 @@ export default function VocabularyPage() {
             </div>
           </div>
         )}
-       
+
         {/* All Sets */}
         {!loading && !error && (
           <div>
@@ -322,7 +365,7 @@ export default function VocabularyPage() {
               <BookOpen className="h-8 w-8 text-blue-500" />
               <h2 className="text-3xl font-bold text-gray-900">Tất cả bộ từ vựng</h2>
             </div>
-            
+
             {filteredSets.length === 0 ? (
               <div className="text-center py-16">
                 <div className="relative">
@@ -331,7 +374,7 @@ export default function VocabularyPage() {
                     <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy bộ từ vựng</h3>
                     <p className="text-gray-600 mb-6">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
-                    <Button 
+                    <Button
                       onClick={() => {
                         setSearchTerm("")
                         setSelectedCategory("all")
@@ -368,8 +411,8 @@ export default function VocabularyPage() {
                       {/* Thumbnail */}
                       <div className="relative h-48 overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20"></div>
-                        <img 
-                          src={set.thumbnail} 
+                        <img
+                          src={set.thumbnail}
                           alt={set.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
@@ -395,38 +438,35 @@ export default function VocabularyPage() {
                         </CardTitle>
 
                         {/* Description */}
-                        <CardDescription className="text-gray-600 mb-4 line-clamp-2">
+                        <CardDescription className="text-gray-600 mb-4 line-clamp-2 h-10">
                           {set.description}
                         </CardDescription>
 
-                        {/* Word Count & Progress */}
+                        {/* Word Count & Difficulty Breakdown */}
                         <div className="mb-4">
                           <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
                             <span>Từ vựng: {set.wordCount} từ</span>
-                            <span className="font-medium">{set.progress}%</span>
+                            <span className="font-medium">{set.level}</span>
                           </div>
-                          <Progress value={set.progress} className="h-2 bg-gray-200">
-                            <div 
-                              className="h-2 rounded-full transition-all duration-500"
-                              style={{ 
-                                width: `${set.progress}%`,
-                                backgroundColor: set.progress === 0 ? '#e5e7eb' : 
-                                               set.progress < 50 ? '#ef4444' : 
-                                               set.progress < 100 ? '#f59e0b' : '#10b981'
-                              }}
-                            />
-                          </Progress>
-                          <div className="text-xs text-gray-500 mt-1">{getProgressText(set.progress)}</div>
-                        </div>
 
-                        {/* Instructor */}
-                        <div className="flex items-center gap-3 mb-4">
-                          <img 
-                            src={set.instructorAvatar} 
-                            alt={set.instructor}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                          <span className="text-sm text-gray-700 font-medium">{set.instructor}</span>
+                          {/* Difficulty breakdown */}
+                          {set.difficultyCounts && (
+                            <div className="space-y-1 mb-2">
+                              {Object.entries(set.difficultyCounts).map(([difficulty, count]) => (
+                                <div key={difficulty} className="flex items-center justify-between text-xs">
+                                  <span className="text-gray-500">
+                                    {difficulty === 'Easy' ? 'Dễ' :
+                                      difficulty === 'Medium' ? 'Trung bình' : 'Khó'}
+                                  </span>
+                                  <span className="font-medium">{count} từ</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="text-xs text-gray-500 mt-1">
+                            Thời gian học: {set.duration}
+                          </div>
                         </div>
 
                         {/* Set Details */}
@@ -436,24 +476,25 @@ export default function VocabularyPage() {
                             <span>{set.duration}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            <span>{set.students.toLocaleString()}</span>
+                            <BookOpen className="h-4 w-4" />
+                            <span>{set.wordCount} từ</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span>{set.rating}</span>
-                          </div>
+                          {set.isNew && (
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="h-4 w-4 text-blue-500" />
+                              <span className="text-blue-600 font-medium">Mới</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Action Button */}
-                        <Button 
+                        <Button
                           asChild
                           variant="outline"
                           className="w-full border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 rounded-2xl py-3 transform hover:scale-105 transition-all duration-300"
                         >
                           <Link href={`/vocabulary/${set.id}`}>
-                            {set.progress === 0 ? 'Bắt đầu học' : 
-                             set.progress < 100 ? 'Tiếp tục học' : 'Đã hoàn thành'}
+                            Bắt đầu học
                             <ArrowRight className="h-4 w-4 ml-2" />
                           </Link>
                         </Button>
