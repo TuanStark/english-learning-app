@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { 
-  BookOpen, 
-  Clock, 
-  Users, 
-  Star, 
+import {
+  BookOpen,
+  Clock,
+  Users,
+  Star,
   Search,
   Play,
   Target,
@@ -46,13 +46,13 @@ export default function ExamsPage() {
       if (search) params.append('search', search);
       if (type && type !== 'Tất cả') params.append('type', type);
       if (difficulty && difficulty !== 'Tất cả') params.append('difficulty', difficulty);
-      
+
       const url = `http://localhost:8001/exams${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('Fetching from:', url);
-      
+
       const response = await fetch(url);
       const data = await response.json();
-      
+
       if (data.data) {
         setExams(data.data);
         setPagination(data.meta || { page: 1, limit: 10, total: 0, totalPages: 0 });
@@ -153,7 +153,7 @@ export default function ExamsPage() {
             <Sparkles className="h-12 w-12 text-purple-600" />
           </div>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Luyện tập với các đề thi TOEIC, IELTS chất lượng cao. 
+            Luyện tập với các đề thi TOEIC, IELTS chất lượng cao.
             Cải thiện kỹ năng tiếng Anh của bạn với hệ thống đánh giá chi tiết.
           </p>
         </div>
@@ -217,7 +217,7 @@ export default function ExamsPage() {
               <BookOpen className="h-12 w-12 text-blue-200" />
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
@@ -227,7 +227,7 @@ export default function ExamsPage() {
               <CheckCircle className="h-12 w-12 text-purple-200" />
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
@@ -272,7 +272,7 @@ export default function ExamsPage() {
                 <CardTitle className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
                   {exam.title}
                 </CardTitle>
-                
+
                 <CardDescription className="text-gray-600 mb-4 line-clamp-2">
                   {exam.description || "Luyện tập kỹ năng tiếng Anh với đề thi chất lượng cao"}
                 </CardDescription>
@@ -283,12 +283,12 @@ export default function ExamsPage() {
                     <Clock className="h-4 w-4 text-blue-500" />
                     <span>{exam.duration} phút</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Target className="h-4 w-4 text-purple-500" />
                     <span>Độ khó: {exam.difficulty}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4 text-green-500" />
                     <span>{exam._count.examAttempts} người đã làm</span>
@@ -296,15 +296,27 @@ export default function ExamsPage() {
                 </div>
 
                 {/* Action Button */}
-                <Button 
-                  asChild 
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  <Link href={`/exams/${exam.id}/take`}>
-                    <Play className="h-5 w-5 mr-2" />
-                    Bắt đầu làm bài
-                  </Link>
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    asChild
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Link href={`/exams/${exam.id}/take`}>
+                      <Play className="h-5 w-5 mr-2" />
+                      Bắt đầu làm bài
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 font-medium py-2 rounded-xl transition-all duration-300"
+                  >
+                    <Link href={`/exams/${exam.id}/practice`}>
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Thực hành
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -321,7 +333,7 @@ export default function ExamsPage() {
               <p className="text-gray-500 mb-4">
                 Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
               </p>
-              <Button 
+              <Button
                 onClick={() => {
                   setSearchQuery("")
                   setSelectedCategory("Tất cả")
@@ -348,7 +360,7 @@ export default function ExamsPage() {
               >
                 Trước
               </Button>
-              
+
               {[...Array(pagination.totalPages)].map((_, i) => (
                 <Button
                   key={i + 1}
@@ -359,7 +371,7 @@ export default function ExamsPage() {
                   {i + 1}
                 </Button>
               ))}
-              
+
               <Button
                 variant="ghost"
                 size="sm"

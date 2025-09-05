@@ -396,6 +396,12 @@ export default function ExamResultsPage() {
                     Làm lại bài thi
                   </Link>
                 </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href={`/exams/${examId}/practice`}>
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Thực hành (không giới hạn thời gian)
+                  </Link>
+                </Button>
                 <Button variant="outline" className="w-full">
                   <Share2 className="h-4 w-4 mr-2" />
                   Chia sẻ kết quả
