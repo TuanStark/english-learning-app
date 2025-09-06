@@ -193,28 +193,62 @@ export default function ExamPracticePage() {
     
     setAiLoading(true)
     try {
-      // Simulate AI API call - replace with actual AI service
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Call real AI explanation API
+      const response = await fetch('http://localhost:3005/api/v1/super-agent/explain-exercise', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          exerciseId: questionId,
+          includeGrammarAnalysis: true,
+          includeMemoryTips: true,
+          includeRelatedExercises: true
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('AI Explanation response:', data)
+
+      // Format the AI explanation response
+      let explanation = `**Phân tích câu hỏi:**\n${currentQuestion.content}\n\n`
       
-      const mockExplanation = `Đây là câu hỏi về ${currentQuestion.questionType === 'MultipleChoice' ? 'trắc nghiệm' : 'tự luận'}. 
-
-**Phân tích câu hỏi:**
-${currentQuestion.content}
-
-**Gợi ý giải:**
-- Đọc kỹ câu hỏi và các lựa chọn
-- Loại bỏ các đáp án rõ ràng sai
-- Chú ý đến từ khóa quan trọng
-- Xem xét ngữ cảnh và ngữ pháp
-
-**Mẹo làm bài:**
-- Nếu không chắc chắn, hãy chọn đáp án có vẻ hợp lý nhất
-- Đọc lại câu hỏi sau khi chọn đáp án
-- Chú ý đến thì của động từ và chủ ngữ
-
-Bạn có câu hỏi gì về câu này không?`
+      if (data.correctAnswer) {
+        explanation += `**Đáp án đúng:** ${data.correctAnswer}\n\n`
+      }
       
-      setAiExplanation(mockExplanation)
+      if (data.explanation) {
+        explanation += `**Giải thích:**\n${data.explanation}\n\n`
+      }
+      
+      if (data.grammarRule) {
+        explanation += `**Quy tắc ngữ pháp:**\n${data.grammarRule}\n\n`
+      }
+      
+      if (data.memoryTip) {
+        explanation += `**Mẹo ghi nhớ:**\n${data.memoryTip}\n\n`
+      }
+      
+      if (data.whyWrongAnswers) {
+        explanation += `**Tại sao các đáp án khác sai:**\n${data.whyWrongAnswers}\n\n`
+      }
+      
+      if (data.relatedKnowledge) {
+        explanation += `**Kiến thức liên quan:**\n${data.relatedKnowledge}\n\n`
+      }
+      
+      explanation += `**Gợi ý làm bài:**\n`
+      explanation += `- Đọc kỹ câu hỏi và các lựa chọn\n`
+      explanation += `- Loại bỏ các đáp án rõ ràng sai\n`
+      explanation += `- Chú ý đến từ khóa quan trọng\n`
+      explanation += `- Xem xét ngữ cảnh và ngữ pháp\n\n`
+      explanation += `Bạn có câu hỏi gì về câu này không?`
+      
+      setAiExplanation(explanation)
     } catch (error) {
       console.error('Error getting AI explanation:', error)
       setAiExplanation('Xin lỗi, tôi không thể tạo lời giải thích lúc này. Vui lòng thử lại sau.')
@@ -230,12 +264,35 @@ Bạn có câu hỏi gì về câu này không?`
     setChatMessages(prev => [...prev, { role: 'user', content: userMessage }])
     setChatInput('')
     
-    // Simulate AI response
     setAiLoading(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      const aiResponse = `Tôi hiểu câu hỏi của bạn: "${userMessage}"
+      // Call AI chat API
+      const response = await fetch('http://localhost:3005/api/v1/super-agent/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `Câu hỏi hiện tại: "${currentQuestion?.content}". ${userMessage}`,
+          sessionId: `550e8400-e29b-41d4-a716-${examId.toString().padStart(12, '0')}`,
+          context: {
+            examId: examId,
+            questionId: currentQuestion?.id,
+            questionType: currentQuestion?.questionType,
+            userAnswer: answers[currentQuestion?.id || 0]
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('AI Chat response:', data)
+
+      // Use the response field from QueryResponseDto
+      const aiResponse = data.response || data.message || `Tôi hiểu câu hỏi của bạn: "${userMessage}"
 
 Dựa trên câu hỏi hiện tại, tôi có thể giúp bạn:
 - Giải thích chi tiết về ngữ pháp
