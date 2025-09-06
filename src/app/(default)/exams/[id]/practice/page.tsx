@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -76,12 +76,45 @@ export default function ExamPracticePage() {
   const [showAITutor, setShowAITutor] = useState(false)
   const [aiExplanation, setAiExplanation] = useState<string>('')
   const [aiLoading, setAiLoading] = useState(false)
+  const [showHints, setShowHints] = useState(false)
+  
+  // Chat states
+  const [showChat, setShowChat] = useState(false)
   const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'ai', content: string}>>([])
   const [chatInput, setChatInput] = useState('')
-  const [showHints, setShowHints] = useState(false)
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null)
 
   const examId = params?.id as string
   const currentQuestion = questions[currentQuestionIndex]
+  
+  // Auto scroll to bottom of chat
+  const scrollToBottom = () => {
+    chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+  
+  // Auto scroll when new messages are added
+  useEffect(() => {
+    scrollToBottom()
+  }, [chatMessages])
+  
+  // Auto scroll when chat window opens
+  useEffect(() => {
+    if (showChat) {
+      setTimeout(scrollToBottom, 100) // Small delay to ensure DOM is ready
+    }
+  }, [showChat])
+  
+  // Generate unique session ID once per page load (UUID format)
+  const [sessionId] = useState(() => {
+    const generateUUID = () => {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0
+        const v = c === 'x' ? r : (r & 0x3 | 0x8)
+        return v.toString(16)
+      })
+    }
+    return generateUUID()
+  })
 
   useEffect(() => {
     const fetchExamAndQuestions = async () => {
@@ -182,6 +215,7 @@ export default function ExamPracticePage() {
     setCurrentQuestionIndex(0)
     setShowResults(false)
     setShowAITutor(false)
+    setShowChat(false)
     setAiExplanation('')
     setChatMessages([])
     setShowHints(false)
@@ -194,7 +228,7 @@ export default function ExamPracticePage() {
     setAiLoading(true)
     try {
       // Call real AI explanation API
-      const response = await fetch('http://localhost:3005/api/v1/super-agent/explain-exercise', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_AI_URL}/api/v1/super-agent/explain-exercise`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -241,13 +275,6 @@ export default function ExamPracticePage() {
         explanation += `**Kiến thức liên quan:**\n${data.relatedKnowledge}\n\n`
       }
       
-      explanation += `**Gợi ý làm bài:**\n`
-      explanation += `- Đọc kỹ câu hỏi và các lựa chọn\n`
-      explanation += `- Loại bỏ các đáp án rõ ràng sai\n`
-      explanation += `- Chú ý đến từ khóa quan trọng\n`
-      explanation += `- Xem xét ngữ cảnh và ngữ pháp\n\n`
-      explanation += `Bạn có câu hỏi gì về câu này không?`
-      
       setAiExplanation(explanation)
     } catch (error) {
       console.error('Error getting AI explanation:', error)
@@ -267,14 +294,14 @@ export default function ExamPracticePage() {
     setAiLoading(true)
     try {
       // Call AI chat API
-      const response = await fetch('http://localhost:3005/api/v1/super-agent/query', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_AI_URL}/api/v1/super-agent/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           query: `Câu hỏi hiện tại: "${currentQuestion?.content}". ${userMessage}`,
-          sessionId: `550e8400-e29b-41d4-a716-${examId.toString().padStart(12, '0')}`,
+          sessionId: sessionId,
           context: {
             examId: examId,
             questionId: currentQuestion?.id,
@@ -506,8 +533,15 @@ Bạn muốn tôi giải thích điều gì cụ thể?`
   const feedback = getFeedback(score.percentage)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-pulse" style={{animationDelay: '4s'}}></div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Back Button */}
         <div className="mb-6">
           <Button 
@@ -668,115 +702,61 @@ Bạn muốn tôi giải thích điều gì cụ thể?`
                 </Card>
               </div>
 
-              {/* AI Tutor Panel */}
+              {/* AI Tutor Panel - Only Explanation and Hints */}
               <div className="lg:col-span-1">
                 {showAITutor && (
-                  <Card className="border-0 shadow-soft bg-gradient-to-br from-purple-50 to-blue-50 backdrop-blur-sm h-fit">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Bot className="h-5 w-5 text-purple-600" />
+                  <Card className="border-0 shadow-2xl bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 backdrop-blur-sm h-fit transform transition-all duration-300 hover:scale-105 hover:shadow-3xl">
+                    <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+                      <CardTitle className="flex items-center gap-3 text-xl">
+                        <div className="p-2 bg-white/20 rounded-full">
+                          <Bot className="h-6 w-6" />
+                        </div>
                         AI Tutor
                       </CardTitle>
-                      <CardDescription>
-                        Trợ lý AI giúp bạn học tập hiệu quả
+                      <CardDescription className="text-purple-100">
+                        🤖 Trợ lý AI thông minh giúp bạn học tập hiệu quả
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* AI Explanation */}
                       {aiExplanation && (
-                        <div className="bg-white rounded-lg p-4 border border-purple-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Sparkles className="h-4 w-4 text-purple-600" />
-                            <h4 className="font-semibold text-purple-800">Giải thích AI</h4>
+                        <div className="bg-gradient-to-br from-white to-purple-50 rounded-xl p-5 border-2 border-purple-200 shadow-lg transform transition-all duration-300 hover:shadow-xl">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full">
+                              <Sparkles className="h-5 w-5 text-white" />
+                            </div>
+                            <h4 className="font-bold text-purple-800 text-lg">✨ Giải thích AI</h4>
                           </div>
-                          <div className="text-sm text-gray-700 whitespace-pre-line">
+                          <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed bg-white/50 rounded-lg p-3 border border-purple-100">
                             {aiExplanation}
                           </div>
                         </div>
                       )}
 
-                      {/* Chat Interface */}
-                      <div className="space-y-3">
-                        <div className="bg-white rounded-lg p-3 border border-purple-200 max-h-48 overflow-y-auto">
-                          {chatMessages.length === 0 ? (
-                            <div className="text-center text-gray-500 text-sm py-4">
-                              <MessageCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                              <p>Hỏi AI về câu hỏi này</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              {chatMessages.map((message, index) => (
-                                <div
-                                  key={index}
-                                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                                >
-                                  <div
-                                    className={`max-w-[80%] p-2 rounded-lg text-sm ${
-                                      message.role === 'user'
-                                        ? 'bg-blue-500 text-white'
-                                        : 'bg-gray-100 text-gray-800'
-                                    }`}
-                                  >
-                                    {message.content}
-                                  </div>
-                                </div>
-                              ))}
-                              {aiLoading && (
-                                <div className="flex justify-start">
-                                  <div className="bg-gray-100 p-2 rounded-lg text-sm">
-                                    <div className="flex items-center gap-2">
-                                      <RefreshCw className="h-3 w-3 animate-spin" />
-                                      AI đang suy nghĩ...
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Chat Input */}
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
-                            placeholder="Hỏi AI về câu hỏi này..."
-                            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            disabled={aiLoading}
-                          />
-                          <Button
-                            onClick={sendChatMessage}
-                            size="sm"
-                            disabled={!chatInput.trim() || aiLoading}
-                            className="bg-purple-600 hover:bg-purple-700"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
                       {/* Quick Actions */}
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Button
                           onClick={() => getAIExplanation(currentQuestion?.id || 0)}
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
+                          className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105"
                           disabled={aiLoading}
                         >
                           <Brain className="h-4 w-4 mr-2" />
-                          Giải thích chi tiết
+                          {aiLoading ? 'Đang xử lý...' : '🧠 Giải thích chi tiết'}
                         </Button>
                         <Button
                           onClick={() => setShowHints(!showHints)}
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
+                          className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105"
                         >
                           <Lightbulb className="h-4 w-4 mr-2" />
-                          {showHints ? 'Ẩn' : 'Hiện'} gợi ý
+                          {showHints ? '🙈 Ẩn gợi ý' : '💡 Hiện gợi ý'}
+                        </Button>
+                        <Button
+                          onClick={() => setShowAITutor(false)}
+                          variant="outline"
+                          className="w-full border-2 border-gray-300 hover:border-red-400 hover:bg-red-50 text-gray-600 hover:text-red-600 transform transition-all duration-300 hover:scale-105"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          ❌ Đóng AI Tutor
                         </Button>
                       </div>
                     </CardContent>
@@ -942,6 +922,110 @@ Bạn muốn tôi giải thích điều gì cụ thể?`
             </div>
           </div>
         )}
+
+        {/* Floating AI Chat Widget - Only Chat */}
+        <div className="fixed bottom-6 right-6 z-50">
+          {/* Chat Button */}
+          <Button
+            onClick={() => setShowChat(!showChat)}
+            className="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 animate-pulse"
+          >
+            <MessageCircle className="h-7 w-7 text-white" />
+          </Button>
+
+          {/* Chat Window */}
+          {showChat && (
+            <div className="absolute bottom-20 right-0 w-96 h-[28rem] bg-white rounded-2xl shadow-2xl border-2 border-green-200 flex flex-col transform transition-all duration-300 animate-slide-up">
+              {/* Chat Header */}
+              <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-5 rounded-t-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-full">
+                    <MessageCircle className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-lg">💬 Chat với AI</span>
+                    <p className="text-green-100 text-xs">Trợ lý học tập thông minh</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowChat(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20 rounded-full p-2"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Chat Messages */}
+              <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gradient-to-b from-gray-50 to-white">
+                {chatMessages.length === 0 ? (
+                  <div className="text-center text-gray-500 py-12">
+                    <div className="w-16 h-16 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageCircle className="h-8 w-8 text-green-500" />
+                    </div>
+                    <p className="text-lg font-medium mb-2">💬 Chào mừng!</p>
+                    <p className="text-sm">Hỏi AI về câu hỏi này để được hỗ trợ</p>
+                  </div>
+                ) : (
+                  chatMessages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+                    >
+                      <div
+                        className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-lg ${
+                          message.role === 'user'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
+                            : 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-800 border border-gray-200'
+                        }`}
+                      >
+                        {message.content}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {aiLoading && (
+                  <div className="flex justify-start animate-fade-in">
+                    <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-3 rounded-2xl text-sm border border-green-200 shadow-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                          <RefreshCw className="h-3 w-3 animate-spin text-white" />
+                        </div>
+                        <span className="text-green-700 font-medium">AI đang suy nghĩ...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Auto scroll target */}
+                <div ref={chatMessagesEndRef} />
+              </div>
+
+              {/* Chat Input */}
+              <div className="p-4 bg-gradient-to-r from-gray-50 to-green-50 border-t-2 border-green-200">
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                    placeholder="💬 Hỏi AI về câu hỏi này..."
+                    className="flex-1 px-4 py-3 text-sm border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 bg-white shadow-sm"
+                    disabled={aiLoading}
+                  />
+                  <Button
+                    onClick={sendChatMessage}
+                    size="sm"
+                    disabled={!chatInput.trim() || aiLoading}
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-3 rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Send className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
