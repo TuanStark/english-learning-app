@@ -118,21 +118,18 @@ export interface BlogPost {
   slug: string;
   excerpt?: string;
   content: string;
+  featuredImage?: string;
   authorId: number;
   categoryId: number;
   status: 'Draft' | 'Published' | 'Archived';
   publishedAt?: string;
-  featuredImage?: string;
-  tags?: string[];
+  seoKeywords?: string;
+  seoDescription?: string;
   viewCount?: number;
-  likeCount?: number;
   commentCount?: number;
-  author?: {
-    id: number;
-    fullName: string;
-    avatar?: string;
-  };
+  author?: any;
   category?: BlogCategory;
+  blogComments?: BlogComment[];
   createdAt: string;
   updatedAt: string;
 }

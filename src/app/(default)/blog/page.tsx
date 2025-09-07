@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import Pagination from "@/components/Pagination"
+import usePagination from "@/hooks/usePagination"
+import useSWR from "swr"
 import { 
   Search, 
   Filter, 
@@ -36,7 +39,7 @@ import {
   ChevronRight
 } from "lucide-react"
 import Link from "next/link"
-import { useBlog } from '@/hooks/useBlog'
+import { blogApi } from '@/lib/api'
 
 
 
@@ -45,51 +48,54 @@ export default function BlogPage() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [hoveredPost, setHoveredPost] = useState<number | null>(null)
   
-  const { blogPosts, categories, loading, error, loadPublishedPosts } = useBlog()
+  // Use pagination hook
+  const { page, limit, setPage } = usePagination('/blog', 6, 1);
 
-  // Load published posts on component mount
-  useEffect(() => {
-    loadPublishedPosts()
-  }, [])
-
-  const filteredPosts = blogPosts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (post.excerpt && post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesCategory = selectedCategory === "all" || post.category?.categoryName === selectedCategory
+  // SWR fetcher for blog posts
+  const fetcher = async (url: string) => {
+    console.log('Fetcher called with:', url);
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (searchTerm) params.append('search', searchTerm);
+    if (selectedCategory && selectedCategory !== "all") params.append('category', selectedCategory);
     
-    return matchesSearch && matchesCategory
-  })
+    console.log('API params:', params.toString());
+    const response = await blogApi.getAll(params.toString());
+    console.log('API response:', response);
+    return response.data; // Return toàn bộ data object
+  };
+
+  // SWR fetcher for categories
+  const categoriesFetcher = async () => {
+    const response = await blogApi.getCategories();
+    return response.data;
+  };
+
+  // Use SWR with dynamic keys
+  const { data, error, isLoading } = useSWR(
+    `blog-posts?page=${page}&limit=${limit}&search=${searchTerm}&category=${selectedCategory}`,
+    fetcher
+  );
+
+  const { data: categoriesData } = useSWR('blog-categories', categoriesFetcher);
+
+  // Transform data
+  const blogPosts = Array.isArray((data as any)?.data) ? (data as any).data : [];
+  console.log('blogPosts', blogPosts)
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
+
+  // Get pagination info from backend
+  const total = (data as any)?.meta?.total || blogPosts.length;
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, selectedCategory])
 
   // Get unique category names for filter
   const categoryNames = ["all", ...(categories.map(cat => cat.categoryName) || [])]
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải bài viết blog...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Đã xảy ra lỗi</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>
-            Thử lại
-          </Button>
-        </div>
-      </div>
-    )
-  }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -141,6 +147,52 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Loading State */}
+        {isLoading && (
+          <div className="mb-16">
+            <div className="flex items-center gap-3 mb-8">
+              <BookOpen className="h-8 w-8 text-blue-500" />
+              <h2 className="text-3xl font-bold text-gray-900">Đang tải...</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+                  <div className="h-48 bg-gray-200"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-2 w-1/2"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-4"></div>
+                    <div className="h-6 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="mb-16">
+            <div className="text-center py-16">
+              <div className="text-red-500 mb-4">
+                <BookOpen className="h-16 w-16 mx-auto" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Lỗi khi tải dữ liệu</h3>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <Button
+                onClick={() => window.location.reload()}
+                className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white rounded-2xl px-6 py-2"
+              >
+                Thử lại
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        {!isLoading && !error && (
+          <>
         {/* Breadcrumb */}
         <div className="mb-6">
           <nav className="flex items-center space-x-2 text-sm text-gray-600">
@@ -170,7 +222,7 @@ export default function BlogPage() {
                 <h2 className="text-2xl font-bold text-gray-900">Bài Viết Nổi Bật</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {blogPosts.slice(0, 3).map((post) => (
+                {blogPosts.slice(0, 3).map((post: any) => (
                   <div key={post.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                     {/* Thumbnail */}
                     <div className="relative h-48 overflow-hidden">
@@ -213,7 +265,7 @@ export default function BlogPage() {
                 <h2 className="text-2xl font-bold text-gray-900">Bài Viết Mới Nhất</h2>
               </div>
               
-              {filteredPosts.length === 0 ? (
+              {blogPosts.length === 0 ? (
                 <div className="text-center py-12">
                   <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy bài viết</h3>
@@ -222,6 +274,7 @@ export default function BlogPage() {
                     onClick={() => {
                       setSearchTerm("")
                       setSelectedCategory("all")
+                      setPage(1)
                     }}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
@@ -230,7 +283,7 @@ export default function BlogPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {filteredPosts.map((post) => (
+                  {blogPosts.map((post: any) => (
                     <div key={post.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                       {/* Thumbnail */}
                       <div className="relative h-48 overflow-hidden">
@@ -276,6 +329,18 @@ export default function BlogPage() {
                   ))}
                 </div>
               )}
+
+              {/* Pagination */}
+              {total > 0 && (
+                <div className="mt-12">
+                  <Pagination
+                    page={page}
+                    limit={limit}
+                    setPage={setPage}
+                    total={total}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -314,7 +379,7 @@ export default function BlogPage() {
                   <CardTitle className="text-lg font-semibold">Bài viết phổ biến</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {blogPosts.slice(0, 5).map((post) => (
+                  {blogPosts.slice(0, 5).map((post: any) => (
                     <div key={post.id} className="flex gap-3">
                       <div className="w-16 h-16 bg-gray-200 rounded flex-shrink-0">
                         {post.featuredImage ? (
@@ -367,7 +432,8 @@ export default function BlogPage() {
             </div>
           </div>
         </div>
-
+        </>
+        )}
       </div>
     </div>
   )
