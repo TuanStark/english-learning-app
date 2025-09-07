@@ -25,6 +25,9 @@ export interface VocabularyTopic {
   orderIndex: number;
   isActive: boolean;
   vocabularies?: Vocabulary[];
+  _count?: {
+    vocabularies: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -227,8 +230,9 @@ class ApiClient {
   }
 
   // Vocabulary API
-  async getVocabularyTopics(): Promise<ApiResponse<VocabularyTopicsResponse>> {
-    return this.request<VocabularyTopicsResponse>('/vocabulary-topics');
+  async getVocabularyTopics(params?: string): Promise<ApiResponse<VocabularyTopicsResponse>> {
+    const url = params ? `/vocabulary-topics?${params}` : '/vocabulary-topics';
+    return this.request<VocabularyTopicsResponse>(url);
   }
 
   async getVocabularyTopicById(id: number): Promise<VocabularyTopic> {
@@ -374,7 +378,7 @@ export const apiClient = new ApiClient(API_BASE_URL || '');
 
 // Export individual API functions for convenience
 export const vocabularyApi = {
-  getTopics: () => apiClient.getVocabularyTopics(),
+  getTopics: (params?: string) => apiClient.getVocabularyTopics(params),
   getTopicById: (id: number) => apiClient.getVocabularyTopicById(id),
   getTopicStats: (id: number) => apiClient.getVocabularyTopicStats(id),
   getAll: (params?: any) => apiClient.getVocabularies(params),

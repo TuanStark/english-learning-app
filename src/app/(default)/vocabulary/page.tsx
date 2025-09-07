@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardDescription, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
+import Pagination from "@/components/Pagination"
+import usePagination from "@/hooks/usePagination"
+import useSWR from "swr"
 import {
   Search,
   Filter,
   BookOpen,
-  Users,
   Star,
   Clock,
   Play,
@@ -21,100 +22,69 @@ import {
   GraduationCap,
   Heart,
   Crown,
-  TrendingUp,
-  Award,
   Globe,
-  Lightbulb,
-  Rocket,
-  Eye,
   ArrowRight,
   CheckCircle,
   MessageCircle,
-  BookMarked,
-  Flame,
   AlertCircle
 } from "lucide-react"
 import Link from "next/link"
-import { useVocabulary } from '@/hooks/useVocabulary';
+import { vocabularyApi } from '@/lib/api';
 
 export default function VocabularyPage() {
-  const {
-    topics,
-    vocabularies,
-    loading,
-    error,
-    getVocabulariesCountByTopic,
-    getTotalVocabulariesCount,
-    getVocabulariesByDifficultyCount,
-    filterVocabularies
-  } = useVocabulary();
-
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  console.log('selectedCategory', selectedCategory)
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [hoveredSet, setHoveredSet] = useState<number | null>(null)
+  
+  // Use pagination hook
+  const { page, limit, setPage } = usePagination('/vocabulary', 9, 1);
 
-  // Transform backend data to match UI structure
-  const vocabularySets = topics.filter(topic => topic.isActive).map(topic => {
-    const topicVocabularies = vocabularies.filter(vocab => vocab.topicId === topic.id);
+  // SWR fetcher with pagination
+  const fetcher = async (url: string) => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (searchTerm) params.append('search', searchTerm);
+    if (selectedCategory && selectedCategory !== "all") params.append('topicName', selectedCategory);
+    
+    const response = await vocabularyApi.getTopics(params.toString());
+    return response.data;
+  };
 
-    // Calculate difficulty level based on vocabulary difficulty distribution
-    const difficultyCounts = topicVocabularies.reduce((acc, vocab) => {
-      acc[vocab.difficultyLevel] = (acc[vocab.difficultyLevel] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+  // Use SWR with dynamic key
+  const { data, error, isLoading } = useSWR(
+    `vocabulary-topics?page=${page}&limit=${limit}&search=${searchTerm}&category=${selectedCategory}&level=${selectedLevel}`,
+    fetcher
+  );
 
-    const totalVocabs = topicVocabularies.length;
-    const hardPercentage = (difficultyCounts.Hard || 0) / totalVocabs;
-    const mediumPercentage = (difficultyCounts.Medium || 0) / totalVocabs;
+  // Transform data
+  const vocabularySets = data?.data?.map(topic => ({
+    id: topic.id,
+    title: topic.topicName,
+    description: topic.description || `Học từ vựng về chủ đề ${topic.topicName}`,
+    level: "Beginner",
+    category: topic.topicName,
+    wordCount: topic.vocabularies?.length || 0,
+    duration: "1 tuần",
+    thumbnail: topic.image || "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=250&fit=crop",
+    isFree: topic.orderIndex <= 3,
+    isNew: new Date(topic.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    difficultyCounts: { Easy: 0, Medium: 0, Hard: 0 }
+  })) || [];
 
-    let level = "Beginner";
-    if (hardPercentage > 0.3 || totalVocabs > 100) {
-      level = "Advanced";
-    } else if (mediumPercentage > 0.4 || totalVocabs > 50) {
-      level = "Intermediate";
-    }
+  // Get pagination info from backend
+  const total = data?.meta?.total || 0;
 
-    // Calculate estimated duration based on word count (assuming 20 words per week)
-    const weeks = Math.max(1, Math.ceil(totalVocabs / 20));
-
-    return {
-      id: topic.id,
-      title: topic.topicName,
-      description: topic.description || `Học từ vựng về chủ đề ${topic.topicName}`,
-      instructor: "Hệ thống",
-      instructorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-      level: level,
-      category: topic.topicName,
-      wordCount: totalVocabs,
-      duration: `${weeks} tuần`,
-      students: Math.floor(Math.random() * 2000) + 100, // This would come from user progress data
-      rating: 4.5 + Math.random() * 0.5, // This would come from user feedback
-      reviews: Math.floor(Math.random() * 200) + 20, // This would come from user feedback
-      progress: 0, // This would come from user progress data
-      isNew: new Date(topic.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      isFree: topic.orderIndex <= 3,
-      thumbnail: topic.image || "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=250&fit=crop",
-      features: ["Flashcards", "Audio Pronunciation", "Practice Tests", "Progress Tracking"],
-      tags: [topic.topicName, "Vocabulary", "English Learning"],
-      difficultyCounts: difficultyCounts,
-      createdAt: topic.createdAt,
-      updatedAt: topic.updatedAt
-    };
-  });
-
-  // Get unique categories and levels from backend data
+  // Get unique categories and levels from data
   const categories = ["all", ...Array.from(new Set(vocabularySets.map(set => set.category)))]
   const levels = ["all", ...Array.from(new Set(vocabularySets.map(set => set.level)))]
 
-  const filteredSets = vocabularySets.filter(set => {
-    const matchesSearch = set.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      set.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || set.category === selectedCategory
-    const matchesLevel = selectedLevel === "all" || set.level === selectedLevel
-
-    return matchesSearch && matchesCategory && matchesLevel
-  })
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, selectedCategory, selectedLevel])
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -166,21 +136,6 @@ export default function VocabularyPage() {
         return "bg-gradient-to-r from-gray-500 to-slate-500 text-white"
     }
   }
-
-  const getProgressColor = (progress: number) => {
-    if (progress === 0) return "bg-gray-200"
-    if (progress < 50) return "bg-red-500"
-    if (progress < 100) return "bg-yellow-500"
-    return "bg-green-500"
-  }
-
-  const getProgressText = (progress: number) => {
-    if (progress === 0) return "Chưa bắt đầu"
-    if (progress < 50) return "Đang học"
-    if (progress < 100) return "Gần hoàn thành"
-    return "Đã hoàn thành"
-  }
-
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Floating Background Elements */}
@@ -218,7 +173,7 @@ export default function VocabularyPage() {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
             <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Search */}
                 <div className="relative border-2 border-gray-400 rounded-2xl">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-800 font-bold" />
@@ -246,22 +201,6 @@ export default function VocabularyPage() {
                     ))}
                   </select>
                 </div>
-
-                {/* Level Filter */}
-                <div className="relative border-2 border-gray-400 rounded-2xl">
-                  <Zap className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-800 font-bold" />
-                  <select
-                    value={selectedLevel}
-                    onChange={(e) => setSelectedLevel(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-2xl border-0 bg-white/50 backdrop-blur-sm focus:ring-0 focus:ring-offset-0 focus:outline-none focus:border-0 appearance-none cursor-pointer"
-                  >
-                    {levels.map(level => (
-                      <option key={level} value={level}>
-                        {level === "all" ? "Tất cả cấp độ" : level}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
             </div>
           </div>
@@ -274,25 +213,25 @@ export default function VocabularyPage() {
               {
                 icon: BookOpen,
                 label: "Tổng chủ đề",
-                value: vocabularySets.length,
+                value: total,
                 color: "from-blue-500 to-cyan-500"
               },
               {
                 icon: Target,
                 label: "Tổng từ vựng",
-                value: getTotalVocabulariesCount(),
+                value: vocabularySets.reduce((sum, set) => sum + set.wordCount, 0),
                 color: "from-purple-500 to-pink-500"
               },
               {
                 icon: Brain,
                 label: "Từ khó",
-                value: getVocabulariesByDifficultyCount().Hard,
+                value: vocabularySets.reduce((sum, set) => sum + (set.difficultyCounts?.Hard || 0), 0),
                 color: "from-amber-500 to-orange-500"
               },
               {
                 icon: Star,
                 label: "Từ dễ",
-                value: getVocabulariesByDifficultyCount().Easy,
+                value: vocabularySets.reduce((sum, set) => sum + (set.difficultyCounts?.Easy || 0), 0),
                 color: "from-green-500 to-emerald-500"
               }
             ].map((stat, index) => (
@@ -311,7 +250,7 @@ export default function VocabularyPage() {
         </div>
 
         {/* Loading State */}
-        {loading && (
+        {isLoading && (
           <div className="mb-16">
             <div className="flex items-center gap-3 mb-8">
               <Crown className="h-8 w-8 text-amber-500" />
@@ -359,14 +298,14 @@ export default function VocabularyPage() {
         )}
 
         {/* All Sets */}
-        {!loading && !error && (
+        {!isLoading && !error && (
           <div>
             <div className="flex items-center gap-3 mb-8">
               <BookOpen className="h-8 w-8 text-blue-500" />
               <h2 className="text-3xl font-bold text-gray-900">Tất cả bộ từ vựng</h2>
             </div>
 
-            {filteredSets.length === 0 ? (
+            {vocabularySets.length === 0 ? (
               <div className="text-center py-16">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
@@ -379,6 +318,7 @@ export default function VocabularyPage() {
                         setSearchTerm("")
                         setSelectedCategory("all")
                         setSelectedLevel("all")
+                        setPage(1)
                       }}
                       className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl px-6 py-2"
                     >
@@ -389,7 +329,7 @@ export default function VocabularyPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredSets.map((set) => (
+                {vocabularySets.map((set) => (
                   <div
                     key={set.id}
                     className="relative group"
@@ -448,22 +388,6 @@ export default function VocabularyPage() {
                             <span>Từ vựng: {set.wordCount} từ</span>
                             <span className="font-medium">{set.level}</span>
                           </div>
-
-                          {/* Difficulty breakdown */}
-                          {set.difficultyCounts && (
-                            <div className="space-y-1 mb-2">
-                              {Object.entries(set.difficultyCounts).map(([difficulty, count]) => (
-                                <div key={difficulty} className="flex items-center justify-between text-xs">
-                                  <span className="text-gray-500">
-                                    {difficulty === 'Easy' ? 'Dễ' :
-                                      difficulty === 'Medium' ? 'Trung bình' : 'Khó'}
-                                  </span>
-                                  <span className="font-medium">{count} từ</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
                           <div className="text-xs text-gray-500 mt-1">
                             Thời gian học: {set.duration}
                           </div>
@@ -502,6 +426,18 @@ export default function VocabularyPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {total > 0 && (
+              <div className="mt-12">
+                <Pagination
+                  page={page}
+                  limit={limit}
+                  setPage={setPage}
+                  total={total}
+                />
               </div>
             )}
           </div>
