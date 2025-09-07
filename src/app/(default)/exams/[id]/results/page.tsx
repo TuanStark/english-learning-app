@@ -58,7 +58,7 @@ export default function ExamResultsPage() {
         setError(null)
         
         // Fetch exam data
-        const examResponse = await fetch(`http://localhost:8001/exams/${examId}`)
+        const examResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exams/${examId}`)
         if (!examResponse.ok) {
           throw new Error(`HTTP error! status: ${examResponse.status}`)
         }
@@ -85,7 +85,7 @@ export default function ExamResultsPage() {
         // Fetch exam attempt data if we have attemptId
         if (attemptId) {
           try {
-            const attemptResponse = await fetch(`http://localhost:8001/exam-attempts/${attemptId}`)
+            const attemptResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exam-attempts/${attemptId}`)
             if (attemptResponse.ok) {
               const attemptData = await attemptResponse.json()
               console.log('Attempt response:', attemptData)

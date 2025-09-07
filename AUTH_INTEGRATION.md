@@ -8,7 +8,7 @@ Hệ thống xác thực đã được tích hợp với backend API và localSt
 
 ### 1. API Integration (`src/lib/api.ts`)
 
-- **API Base URL**: `http://localhost:8001`
+- **API Base URL**: `${process.env.NEXT_PUBLIC_BACKEND_URL}`
 - **Endpoints**:
   - `POST /auth/register` - Đăng ký người dùng mới
   - `POST /auth/login` - Đăng nhập
@@ -168,7 +168,7 @@ import { LocalStorageDemo } from '@/components/auth/local-storage-demo'
 
 ```bash
 # Backend API
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
+NEXT_PUBLIC_API_BASE_URL=${process.env.NEXT_PUBLIC_BACKEND_URL}
 
 # NextAuth (nếu cần)
 NEXTAUTH_SECRET=your-secret-key

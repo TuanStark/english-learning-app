@@ -1,5 +1,5 @@
 // API service layer for integrating with NestJS backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 // Common response types
 export interface ApiResponse<T> {
@@ -370,7 +370,7 @@ class ApiClient {
 }
 
 // Export singleton instance
-export const apiClient = new ApiClient(API_BASE_URL);
+export const apiClient = new ApiClient(API_BASE_URL || '');
 
 // Export individual API functions for convenience
 export const vocabularyApi = {

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import Pagination from "@/components/Pagination"
+import usePagination from "@/hooks/usePagination"
 import {
   BookOpen,
   Clock,
@@ -24,30 +26,33 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Exam } from "@/types/global-type"
-import { Pagination } from "@/types/global-type"
 
 export default function ExamsPage() {
   const [exams, setExams] = useState<Exam[]>([])
-  const [pagination, setPagination] = useState<Pagination>({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0
-  })
-  const [filteredExams, setFilteredExams] = useState<Exam[]>([])
+  const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("Tất cả")
   const [selectedLevel, setSelectedLevel] = useState("Tất cả")
 
+  // Use pagination hook
+  const { page, limit, setPage, offset } = usePagination('/exams', 9, 1)
+
   const fetchExams = async (search?: string, type?: string, difficulty?: string) => {
     try {
+      setIsLoading(true);
       const params = new URLSearchParams();
+      
+      // Add pagination parameters
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
+      
+      // Add filter parameters
       if (search) params.append('search', search);
       if (type && type !== 'Tất cả') params.append('type', type);
       if (difficulty && difficulty !== 'Tất cả') params.append('difficulty', difficulty);
 
-      const url = `http://localhost:8001/exams${params.toString() ? `?${params.toString()}` : ''}`;
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/exams?${params.toString()}`;
       console.log('Fetching from:', url);
 
       const response = await fetch(url);
@@ -55,8 +60,7 @@ export default function ExamsPage() {
 
       if (data.data) {
         setExams(data.data);
-        setPagination(data.meta || { page: 1, limit: 10, total: 0, totalPages: 0 });
-        setFilteredExams(data.data);
+        setTotal(data.meta?.total || 0);
       }
     } catch (error) {
       console.error('Error fetching exams:', error);
@@ -69,16 +73,17 @@ export default function ExamsPage() {
   const categories = ["Tất cả", "TOEIC", "IELTS"]
   const levels = ["Tất cả", "Easy", "Medium", "Hard"]
 
+  // Fetch data when page or limit changes
   useEffect(() => {
-    fetchExams();
-  }, [])
+    fetchExams(searchQuery, selectedCategory, selectedLevel);
+  }, [page, limit])
 
   // Debounce search để tránh gọi API quá nhiều
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!isLoading) {
-        fetchExams(searchQuery, selectedCategory, selectedLevel);
-      }
+      // Reset to page 1 when filters change
+      setPage(1);
+      fetchExams(searchQuery, selectedCategory, selectedLevel);
     }, 500); // Delay 500ms
 
     return () => clearTimeout(timer);
@@ -207,7 +212,7 @@ export default function ExamsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
@@ -217,31 +222,11 @@ export default function ExamsPage() {
               <BookOpen className="h-12 w-12 text-blue-200" />
             </div>
           </div>
-
-          <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-sm font-medium">Đã hoàn thành</p>
-                <p className="text-3xl font-bold">0</p>
-              </div>
-              <CheckCircle className="h-12 w-12 text-purple-200" />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-emerald-100 text-sm font-medium">Điểm trung bình</p>
-                <p className="text-3xl font-bold">--</p>
-              </div>
-              <TrendingUp className="h-12 w-12 text-emerald-200" />
-            </div>
-          </div>
         </div>
 
         {/* Exams Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredExams.map((exam) => (
+          {exams.map((exam) => (
             <Card key={exam.id} className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
               <div className="relative">
                 {/* Type Badge */}
@@ -323,7 +308,7 @@ export default function ExamsPage() {
         </div>
 
         {/* Empty State */}
-        {filteredExams.length === 0 && !isLoading && (
+        {exams.length === 0 && !isLoading && (
           <div className="text-center py-16">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 max-w-md mx-auto">
               <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -338,6 +323,7 @@ export default function ExamsPage() {
                   setSearchQuery("")
                   setSelectedCategory("Tất cả")
                   setSelectedLevel("Tất cả")
+                  setPage(1)
                 }}
                 variant="outline"
                 className="rounded-xl"
@@ -349,39 +335,13 @@ export default function ExamsPage() {
         )}
 
         {/* Pagination */}
-        {pagination.totalPages && pagination.totalPages > 1 && (
-          <div className="flex justify-center mt-12">
-            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100">
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={pagination.page === 1}
-                className="rounded-lg"
-              >
-                Trước
-              </Button>
-
-              {[...Array(pagination.totalPages)].map((_, i) => (
-                <Button
-                  key={i + 1}
-                  variant={pagination.page === i + 1 ? "default" : "ghost"}
-                  size="sm"
-                  className="rounded-lg"
-                >
-                  {i + 1}
-                </Button>
-              ))}
-
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={pagination.page === pagination.totalPages}
-                className="rounded-lg"
-              >
-                Sau
-              </Button>
-            </div>
-          </div>
+        {total > 0 && (
+          <Pagination
+            page={page}
+            limit={limit}
+            setPage={setPage}
+            total={total}
+          />
         )}
       </div>
     </div>

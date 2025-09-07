@@ -71,7 +71,7 @@ export default function TakeExamPage() {
   useEffect(() => {
     const fetchExam = async () => {
       try {
-        const response = await fetch(`http://localhost:8001/exams/${examId}`)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exams/${examId}`)
         if (response.ok) {
           const examData = await response.json()
           console.log('Exam response:', examData)
@@ -79,7 +79,7 @@ export default function TakeExamPage() {
           setTimeLeft(examData.duration * 60) // Convert minutes to seconds
           
           // Fetch questions for this exam
-          const questionsResponse = await fetch(`http://localhost:8001/exams/${examId}/questions`)
+          const questionsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exams/${examId}/questions`)
           if (questionsResponse.ok) {
             const questionsData = await questionsResponse.json()
             console.log('Questions response:', questionsData)
@@ -133,7 +133,7 @@ export default function TakeExamPage() {
     if (!exam || !session?.user?.id) return
 
     try {
-      const response = await fetch('http://localhost:8001/exam-attempts', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exam-attempts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ export default function TakeExamPage() {
 
       // Submit to backend
       if (examAttemptId) {
-        const submitResponse = await fetch(`http://localhost:8001/exam-attempts/${examAttemptId}/submit`, {
+        const submitResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exam-attempts/${examAttemptId}/submit`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -125,7 +125,7 @@ export default function ExamPracticePage() {
         setError(null)
         
         // Fetch exam data
-        const examResponse = await fetch(`http://localhost:8001/exams/${examId}`)
+        const examResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exams/${examId}`)
         if (!examResponse.ok) {
           throw new Error(`HTTP error! status: ${examResponse.status}`)
         }
@@ -150,7 +150,7 @@ export default function ExamPracticePage() {
         }
 
         // Fetch questions
-        const questionsResponse = await fetch(`http://localhost:8001/exams/${examId}/questions`)
+        const questionsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exams/${examId}/questions`)
         if (!questionsResponse.ok) {
           throw new Error(`HTTP error! status: ${questionsResponse.status}`)
         }

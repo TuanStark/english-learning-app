@@ -51,7 +51,7 @@ export default function ExamDetailPage() {
         setIsLoading(true)
         setError(null)
         
-        const response = await fetch(`http://localhost:8001/exams/${examId}`)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exams/${examId}`)
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
