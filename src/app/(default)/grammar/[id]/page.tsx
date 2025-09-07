@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { 
+import {
   ArrowLeft,
   BookOpen,
   Play,
@@ -39,7 +39,7 @@ import { grammarApi, type Grammar } from '@/lib/api'
 export default function GrammarDetailPage() {
   const params = useParams()
   const grammarId = parseInt(params?.id as string)
-  
+
   const { grammarLessons, loading, error } = useGrammar()
   const [selectedGrammar, setSelectedGrammar] = useState<Grammar | null>(null)
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0)
@@ -48,9 +48,32 @@ export default function GrammarDetailPage() {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
   const [progress, setProgress] = useState(0)
   const [learningMode, setLearningMode] = useState<'lesson' | 'quiz' | 'practice'>('lesson')
+  const [grammarExamId, setGrammarExamId] = useState<number | null>(null)
 
   // Find the grammar lesson
   const grammar = grammarLessons.find(g => g.id === grammarId)
+
+  // Find exam for this grammar
+  useEffect(() => {
+    const findGrammarExam = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exams?type=GRAMMAR&search=${selectedGrammar?.title}`)
+        if (response.ok) {
+          const data = await response.json()
+          const exam = data.data?.find((e: any) => e.title.includes(selectedGrammar?.title || ''))
+          if (exam) {
+            setGrammarExamId(exam.id)
+          }
+        }
+      } catch (error) {
+        console.error('Error finding grammar exam:', error)
+      }
+    }
+
+    if (selectedGrammar) {
+      findGrammarExam()
+    }
+  }, [selectedGrammar])
 
   useEffect(() => {
     if (grammar) {
@@ -152,7 +175,7 @@ export default function GrammarDetailPage() {
         <div className="absolute top-20 left-10 w-40 h-40 bg-gradient-to-br from-blue-200/20 to-cyan-200/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute bottom-20 left-1/4 w-48 h-48 bg-gradient-to-br from-amber-200/20 to-orange-200/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
-        </div>
+      </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -163,7 +186,7 @@ export default function GrammarDetailPage() {
               Quay lại Grammar
             </Link>
           </Button>
-          
+
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
             <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
@@ -174,7 +197,7 @@ export default function GrammarDetailPage() {
                 <div>
                   <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-800 bg-clip-text text-transparent">
                     {selectedGrammar.title}
-                </h1>
+                  </h1>
                   <p className="text-gray-600 mt-2 text-lg">
                     {selectedGrammar.content.substring(0, 100)}...
                   </p>
@@ -186,79 +209,52 @@ export default function GrammarDetailPage() {
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">{selectedGrammar.orderIndex}</div>
                   <div className="text-sm text-gray-600">Thứ tự</div>
-                  </div>
+                </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">{Math.round(progress)}%</div>
                   <div className="text-sm text-gray-600">Tiến độ</div>
-                  </div>
+                </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">{mockExamples.length}</div>
                   <div className="text-sm text-gray-600">Ví dụ</div>
-                  </div>
+                </div>
                 <div className="text-center">
                   <Badge className={getDifficultyColor(selectedGrammar.difficultyLevel)}>
                     {selectedGrammar.difficultyLevel}
                   </Badge>
                 </div>
               </div>
-                </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-4 mt-6">
+                <Button 
+                  asChild
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-2xl"
+                >
+                  <Link href={grammarExamId ? `/exams/${grammarExamId}/take` : '#'}>
+                    <Target className="h-5 w-5 mr-2" />
+                    Làm bài tập
+                  </Link>
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="border-2 border-purple-200 text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-2xl"
+                >
+                  <Bookmark className="h-5 w-5 mr-2" />
+                  Lưu bài học
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="border-2 border-gray-200 text-gray-600 hover:bg-gray-50 px-6 py-3 rounded-2xl"
+                >
+                  <Share2 className="h-5 w-5 mr-2" />
+                  Chia sẻ
+                </Button>
               </div>
             </div>
-
-            {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
-            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-lg font-semibold text-gray-900">Tiến độ học tập</span>
-                <span className="text-sm text-gray-600">{currentExampleIndex + 1} / {mockExamples.length}</span>
-                  </div>
-              <Progress value={progress} className="h-3 bg-gray-200">
-                <div 
-                  className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-purple-500 to-pink-600"
-                  style={{ width: `${progress}%` }}
-                />
-              </Progress>
-                          </div>
-                        </div>
-                    </div>
-
-        {/* Learning Mode Tabs */}
-        <div className="mb-8">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
-            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
-              <div className="flex gap-4">
-                <Button
-                  variant={learningMode === 'lesson' ? 'default' : 'outline'}
-                  onClick={() => setLearningMode('lesson')}
-                  className="flex-1"
-                >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Bài học
-                </Button>
-                            <Button 
-                  variant={learningMode === 'quiz' ? 'default' : 'outline'}
-                  onClick={() => setLearningMode('quiz')}
-                  className="flex-1"
-                >
-                  <Target className="h-4 w-4 mr-2" />
-                  Quiz
-                            </Button>
-                          <Button 
-                  variant={learningMode === 'practice' ? 'default' : 'outline'}
-                  onClick={() => setLearningMode('practice')}
-                  className="flex-1"
-                >
-                  <Brain className="h-4 w-4 mr-2" />
-                  Thực hành
-                          </Button>
-                        </div>
-                      </div>
           </div>
-                      </div>
-
+        </div>
+        
         {/* Main Learning Area */}
         <div className="mb-8">
           <div className="relative">
@@ -284,9 +280,9 @@ export default function GrammarDetailPage() {
                       Lý thuyết
                     </h3>
                     <p className="text-lg leading-relaxed">{selectedGrammar.content}</p>
-                        </div>
+                  </div>
                 </div>
-          </div>
+              </div>
 
               {/* Examples Section */}
               <div className="mb-8">
@@ -305,8 +301,8 @@ export default function GrammarDetailPage() {
                       <p className="text-gray-600 mb-2">
                         {mockExamples[currentExampleIndex].vietnamese}
                       </p>
-                </div>
-                
+                    </div>
+
                     <div className="bg-white p-4 rounded-xl border border-purple-200">
                       <h5 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                         <MessageCircle className="h-4 w-4 text-purple-500" />
@@ -318,10 +314,10 @@ export default function GrammarDetailPage() {
                     </div>
                   </div>
                 )}
-                  
+
                 {/* Example Navigation */}
                 <div className="flex items-center justify-between mt-6">
-                    <Button 
+                  <Button
                     onClick={handlePreviousExample}
                     disabled={currentExampleIndex === 0}
                     variant="outline"
@@ -341,7 +337,7 @@ export default function GrammarDetailPage() {
                       Bắt đầu lại
                     </Button>
                   </div>
-                  
+
                   <Button
                     onClick={handleNextExample}
                     disabled={currentExampleIndex === mockExamples.length - 1}
@@ -395,8 +391,8 @@ export default function GrammarDetailPage() {
                           <span className="font-semibold">
                             {isCorrect ? 'Tuyệt vời! Câu trả lời của bạn rất tốt!' : 'Hãy thử lại! Bạn có thể làm tốt hơn!'}
                           </span>
-                    </div>
-                  </div>
+                        </div>
+                      </div>
                     )}
 
                     {showAnswer && (
@@ -437,17 +433,17 @@ export default function GrammarDetailPage() {
                         <Button variant="outline" className="w-full">
                           Bắt đầu
                         </Button>
-                </CardContent>
-              </Card>
+                      </CardContent>
+                    </Card>
 
                     <Card className="border-2 border-orange-200 hover:border-orange-300 transition-colors">
-                <CardHeader>
+                      <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Award className="h-5 w-5 text-orange-500" />
                           Bài tập 2: Viết câu
                         </CardTitle>
-                </CardHeader>
-                <CardContent>
+                      </CardHeader>
+                      <CardContent>
                         <p className="text-gray-700 mb-4">
                           Viết 3 câu sử dụng {selectedGrammar.title.toLowerCase()}.
                         </p>
@@ -456,12 +452,12 @@ export default function GrammarDetailPage() {
                         </Button>
                       </CardContent>
                     </Card>
-                    </div>
-                    </div>
-              )}
-                    </div>
-                    </div>
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Related Grammar */}
         <div className="mb-8">

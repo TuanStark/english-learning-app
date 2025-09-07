@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -22,12 +23,16 @@ import {
   Filter,
   Sparkles,
   Brain,
-  Zap
+  Zap,
+  ArrowLeft
 } from "lucide-react"
 import Link from "next/link"
 import { Exam } from "@/types/global-type"
 
 export default function ExamsPage() {
+  const searchParams = useSearchParams()
+  const grammarId = searchParams?.get('grammar')
+  
   const [exams, setExams] = useState<Exam[]>([])
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -46,6 +51,11 @@ export default function ExamsPage() {
       // Add pagination parameters
       params.append('page', page.toString());
       params.append('limit', limit.toString());
+      
+      // Add grammar filter if present
+      if (grammarId) {
+        params.append('grammarId', grammarId);
+      }
       
       // Add filter parameters
       if (search) params.append('search', search);
@@ -150,6 +160,33 @@ export default function ExamsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Grammar Filter Header */}
+        {grammarId && (
+          <div className="mb-8">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-purple-600/10 rounded-3xl blur-3xl"></div>
+              <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
+                <div className="flex items-center gap-4">
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href="/grammar">
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Quay lại Grammar
+                    </Link>
+                  </Button>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Bài tập Grammar</h2>
+                    <p className="text-gray-600">Các bài tập liên quan đến chủ đề ngữ pháp này</p>
+                  </div>
+                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Grammar Practice
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-bold text-5xl mb-4">

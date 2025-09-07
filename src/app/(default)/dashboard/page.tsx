@@ -626,11 +626,11 @@ export default function DashboardPage() {
                   {dashboardData?.recentExams && dashboardData.recentExams.length > 0 ? (
                     dashboardData.recentExams.slice(0, 5).map((exam) => (
                       <div key={exam.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4">
                           <div className="w-14 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center shadow-sm">
                             <BarChart3 className="h-5 w-5 text-white" />
                           </div>
-                          <div>
+                        <div>
                             <h4 className="font-semibold text-gray-900">{exam.title}</h4>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
@@ -688,15 +688,15 @@ export default function DashboardPage() {
                     return (
                       <div key={index} className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3">
                             <span className="text-2xl">{goal.icon}</span>
                             <span className="font-medium text-gray-900">{goal.name}</span>
-                          </div>
+                      </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600">
-                              {goal.current}/{goal.target}
-                            </span>
-                            {goal.current >= goal.target ? (
+                        <span className="text-sm text-gray-600">
+                          {goal.current}/{goal.target}
+                        </span>
+                        {goal.current >= goal.target ? (
                               <div className="flex items-center gap-1 text-green-600">
                                 <CheckCircle className="h-5 w-5" />
                                 <span className="text-xs font-medium">Hoàn thành!</span>
@@ -842,8 +842,8 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {achievements.length > 0 ? (
                     achievements.slice(0, 6).map((achievement, index) => (
-                      <div 
-                        key={index} 
+                    <div 
+                      key={index} 
                         className={`flex flex-col items-center p-3 rounded-xl border transition-all duration-200 ${
                           achievement.earned 
                             ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-md' 
@@ -922,7 +922,7 @@ export default function DashboardPage() {
                         width: `${dashboardData?.grammarStats.totalTopics ? Math.min((dashboardData.grammarStats.masteredTopics / dashboardData.grammarStats.totalTopics) * 100, 100) : 0}%` 
                       }}
                     ></div>
-                  </div>
+                    </div>
                   <div className="text-xs text-gray-500 text-center">
                     {dashboardData?.grammarStats.totalTopics ? 
                       `${Math.round((dashboardData.grammarStats.masteredTopics / dashboardData.grammarStats.totalTopics) * 100)}% hoàn thành` : 

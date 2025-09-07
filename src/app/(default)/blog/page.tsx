@@ -164,11 +164,11 @@ export default function BlogPage() {
                     <div className="h-4 bg-gray-200 rounded mb-2 w-1/2"></div>
                     <div className="h-4 bg-gray-200 rounded mb-4"></div>
                     <div className="h-6 bg-gray-200 rounded"></div>
-                  </div>
+        </div>
                 </div>
               ))}
             </div>
-          </div>
+                </div>
         )}
 
         {/* Error State */}
@@ -215,56 +215,56 @@ export default function BlogPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
-            {/* Featured Posts */}
+        {/* Featured Posts */}
             <div>
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-1 h-8 bg-blue-600 rounded"></div>
                 <h2 className="text-2xl font-bold text-gray-900">Bài Viết Nổi Bật</h2>
-              </div>
+          </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {blogPosts.slice(0, 3).map((post: any) => (
                   <div key={post.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                    {/* Thumbnail */}
-                    <div className="relative h-48 overflow-hidden">
-                      {post.featuredImage ? (
-                        <img 
-                          src={post.featuredImage} 
-                          alt={post.title}
+                  {/* Thumbnail */}
+                  <div className="relative h-48 overflow-hidden">
+                    {post.featuredImage ? (
+                      <img 
+                        src={post.featuredImage} 
+                        alt={post.title}
                           className="w-full h-full object-cover"
-                        />
-                      ) : (
+                      />
+                    ) : (
                         <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                           <BookOpen className="h-12 w-12 text-blue-600" />
-                        </div>
-                      )}
+                      </div>
+                    )}
                       <div className="absolute inset-0 bg-black/30"></div>
                       <div className="absolute bottom-4 left-4 right-4">
                         <h3 className="text-white font-semibold text-lg leading-tight line-clamp-2">
-                          {post.title}
+                      {post.title}
                         </h3>
                       </div>
                     </div>
-                    
+
                     {/* Content */}
                     <div className="p-4">
                       <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
                         <span>{formatDate(post.publishedAt || post.createdAt)}</span>
                         <span>•</span>
                         <span>5 phút đọc</span>
-                      </div>
-                    </div>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
             {/* Latest Posts */}
-            <div>
+        <div>
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-1 h-8 bg-blue-600 rounded"></div>
                 <h2 className="text-2xl font-bold text-gray-900">Bài Viết Mới Nhất</h2>
-              </div>
-              
+          </div>
+          
               {blogPosts.length === 0 ? (
                 <div className="text-center py-12">
                   <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -280,35 +280,35 @@ export default function BlogPage() {
                   >
                     Xóa bộ lọc
                   </Button>
-                </div>
-              ) : (
+            </div>
+          ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {blogPosts.map((post: any) => (
                     <div key={post.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                      {/* Thumbnail */}
-                      <div className="relative h-48 overflow-hidden">
-                        {post.featuredImage ? (
-                          <img 
-                            src={post.featuredImage} 
-                            alt={post.title}
+                    {/* Thumbnail */}
+                    <div className="relative h-48 overflow-hidden">
+                      {post.featuredImage ? (
+                        <img 
+                          src={post.featuredImage} 
+                          alt={post.title}
                             className="w-full h-full object-cover"
-                          />
-                        ) : (
+                        />
+                      ) : (
                           <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                             <BookOpen className="h-12 w-12 text-blue-600" />
-                          </div>
-                        )}
+                        </div>
+                      )}
                       </div>
-                      
+
                       {/* Content */}
                       <div className="p-4">
                         <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                          {post.title}
+                        {post.title}
                         </h3>
-                        
-                        {post.excerpt && (
+
+                      {post.excerpt && (
                           <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                            {post.excerpt}
+                          {post.excerpt}
                           </p>
                         )}
                         
@@ -327,7 +327,7 @@ export default function BlogPage() {
                       </div>
                     </div>
                   ))}
-                </div>
+                        </div>
               )}
 
               {/* Pagination */}
@@ -339,10 +339,10 @@ export default function BlogPage() {
                     setPage={setPage}
                     total={total}
                   />
-                </div>
+                        </div>
               )}
-            </div>
-          </div>
+                        </div>
+                      </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
@@ -391,8 +391,8 @@ export default function BlogPage() {
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center rounded">
                             <BookOpen className="h-6 w-6 text-blue-600" />
-                          </div>
-                        )}
+                        </div>
+                      )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <Link 

@@ -61,6 +61,8 @@ export interface Role {
     createdAt: string;
     updatedAt: string;
     answerOptions?: AnswerOption[];
+    exam?: Exam;
+    grammar?: Grammar;
   }
   
   // Answer Option
@@ -72,6 +74,7 @@ export interface Role {
     optionLabel: string; // A, B, C, D
     createdAt: string;
     updatedAt: string;
+    question?: Question;
   }
   
   // Exam Attempt
@@ -132,6 +135,7 @@ export interface Role {
     createdAt: string;
     updatedAt: string;
     examples?: GrammarExample[];
+    questions?: Question[];
   }
   
   // Grammar Example
