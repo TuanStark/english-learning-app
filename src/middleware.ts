@@ -60,12 +60,12 @@ export default auth((req) => {
   }
 
   // Check admin access
-  if (isAdminRoute && (!isLoggedIn || req.auth?.user?.role !== "admin")) {
+  if (isAdminRoute && (!isLoggedIn || req.auth?.user?.role?.roleName !== "admin")) {
     return NextResponse.redirect(new URL("/", nextUrl.origin))
   }
 
   // Check teacher access
-  if (isTeacherRoute && (!isLoggedIn || !["admin", "teacher"].includes(req.auth?.user?.role || ""))) {
+  if (isTeacherRoute && (!isLoggedIn || !["admin", "teacher"].includes(req.auth?.user?.role?.roleName || ""))) {
     return NextResponse.redirect(new URL("/", nextUrl.origin))
   }
 

@@ -140,7 +140,7 @@ export function useBlog() {
 
   // Get featured blog posts
   const getFeaturedPosts = () => {
-    return blogPosts.filter(post => post.isFeatured);
+    return blogPosts.filter(post => post.featuredImage).slice(0, 3);
   };
 
   // Get recent blog posts
@@ -184,14 +184,14 @@ export function useBlog() {
   const getPopularPosts = (limit: number = 5) => {
     return blogPosts
       .filter(post => post.status === 'Published')
-      .sort((a, b) => b.viewCount - a.viewCount)
+      .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
       .slice(0, limit);
   };
 
   // Get blog posts by tag
   const getPostsByTag = (tag: string) => {
     return blogPosts.filter(post => 
-      post.tags.some(postTag => 
+      post.tags?.some(postTag => 
         postTag.toLowerCase().includes(tag.toLowerCase())
       )
     );

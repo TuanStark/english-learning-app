@@ -242,7 +242,7 @@ export default function GrammarDetailClient({ grammar }: GrammarDetailClientProp
                     <div className="mb-4">
                       <h4 className="text-xl font-bold text-gray-900 mb-2">Ví dụ {currentExampleIndex + 1}:</h4>
                       <p className="text-lg text-gray-800 font-medium mb-2">
-                        "{mockExamples[currentExampleIndex].sentence}"
+                        &ldquo;{mockExamples[currentExampleIndex].sentence}&rdquo;
                       </p>
                       <p className="text-gray-600 mb-2">
                         {mockExamples[currentExampleIndex].vietnamese}

@@ -4,14 +4,15 @@ import VocabularyDetailClient from './VocabularyDetailClient'
 import { vocabularyApi, type VocabularyTopic } from '@/lib/api'
 
 interface VocabularyDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: VocabularyDetailPageProps): Promise<Metadata> {
   try {
-    const topic = await vocabularyApi.getTopicById(parseInt(params.id))
+    const resolvedParams = await params
+    const topic = await vocabularyApi.getTopicById(parseInt(resolvedParams.id))
     
     if (!topic) {
       return {
@@ -58,10 +59,11 @@ export async function generateStaticParams() {
 }
 
 export default async function VocabularyDetailPage({ params }: VocabularyDetailPageProps) {
+  const resolvedParams = await params
   let topic: VocabularyTopic | null = null
   
   try {
-    topic = await vocabularyApi.getTopicById(parseInt(params.id))
+    topic = await vocabularyApi.getTopicById(parseInt(resolvedParams.id))
   } catch (error) {
     console.error('Error fetching vocabulary topic:', error)
   }

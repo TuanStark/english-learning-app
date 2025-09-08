@@ -162,7 +162,7 @@ export default function ExamDetailClient({ exam }: ExamDetailClientProps) {
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Lượt làm bài</p>
-                        <p className="font-semibold text-lg">{exam.examAttempts?.length || 0} người</p>
+                        <p className="font-semibold text-lg">{exam._count.examAttempts || 0} người</p>
                       </div>
                     </div>
                   </div>

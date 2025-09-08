@@ -1,3 +1,5 @@
+import { ExamAttempt } from "@/types/global-type";
+
 // API service layer for integrating with NestJS backend
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -197,6 +199,12 @@ export interface Exam {
   type: 'TOEIC' | 'IELTS' | 'GRAMMAR' | 'VOCABULARY';
   duration: number;
   totalQuestions: number;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  _count: {
+    questions: number;
+    examAttempts: number;
+  };
+  examAttempts?: ExamAttempt[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -414,6 +422,48 @@ class ApiClient {
   async getExamQuestions(examId: number): Promise<ApiResponse<ExamQuestion[]>> {
     return this.request<ExamQuestion[]>(`/exams/${examId}/questions`);
   }
+
+  // Auth API
+  async login(email: string, password: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async register(userData: any): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async logout(): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/logout', {
+      method: 'POST',
+    });
+  }
+
+  async refreshToken(refreshToken: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    });
+  }
+
+  async forgotPassword(email: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
 }
 
 // Export singleton instance
@@ -464,3 +514,26 @@ export const examApi = {
   getById: (id: number) => apiClient.getExamById(id),
   getQuestions: (examId: number) => apiClient.getExamQuestions(examId),
 };
+
+// Auth API
+export const authApi = {
+  login: (email: string, password: string) => apiClient.login(email, password),
+  register: (userData: any) => apiClient.register(userData),
+  logout: () => apiClient.logout(),
+  refreshToken: (refreshToken: string) => apiClient.refreshToken(refreshToken),
+  forgotPassword: (email: string) => apiClient.forgotPassword(email),
+  resetPassword: (token: string, password: string) => apiClient.resetPassword(token, password),
+};
+
+// Error class
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public data?: any,
+    public errors?: Record<string, string[]>
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}

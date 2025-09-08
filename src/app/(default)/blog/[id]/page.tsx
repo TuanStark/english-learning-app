@@ -1,19 +1,19 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-// @ts-ignore
 import BlogDetailClient from './BlogDetailClient'
 import { blogApi, type BlogPost } from '@/lib/api'
 import { generatePageMetadata, generateArticleStructuredData, generateBreadcrumbStructuredData } from '@/lib/seo'
 
 interface BlogDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: BlogDetailPageProps): Promise<Metadata> {
   try {
-    const response = await blogApi.getById(parseInt(params.id))
+    const resolvedParams = await params
+    const response = await blogApi.getById(parseInt(resolvedParams.id))
     const post = response.data
     
     if (!post) {
@@ -56,10 +56,11 @@ export async function generateStaticParams() {
 }
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
+  const resolvedParams = await params
   let post: BlogPost | null = null
   
   try {
-    const response = await blogApi.getById(parseInt(params.id))
+    const response = await blogApi.getById(parseInt(resolvedParams.id))
     post = response.data
   } catch (error) {
     console.error('Error fetching blog post:', error)

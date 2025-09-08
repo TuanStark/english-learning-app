@@ -5,14 +5,15 @@ import { examApi, type Exam } from '@/lib/api'
 import { generatePageMetadata, generateCourseStructuredData, generateBreadcrumbStructuredData } from '@/lib/seo'
 
 interface ExamDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: ExamDetailPageProps): Promise<Metadata> {
   try {
-    const response = await examApi.getById(parseInt(params.id))
+    const resolvedParams = await params
+    const response = await examApi.getById(parseInt(resolvedParams.id))
     const exam = response.data
     
     if (!exam) {
@@ -37,23 +38,17 @@ export async function generateMetadata({ params }: ExamDetailPageProps): Promise
   }
 }
 
-export async function generateStaticParams() {
-  try {
-    const exams = await examApi.getAll()
-    return exams.data.map((exam: Exam) => ({
-      id: exam.id.toString(),
-    }))
-  } catch (error) {
-    console.error('Error generating static params for exams:', error)
-    return []
-  }
-}
+// Disable static generation for now
+// // export async function generateStaticParams() {
+//   return []
+// }
 
 export default async function ExamDetailPage({ params }: ExamDetailPageProps) {
+  const resolvedParams = await params
   let exam: Exam | null = null
   
   try {
-    const response = await examApi.getById(parseInt(params.id))
+    const response = await examApi.getById(parseInt(resolvedParams.id))
     exam = response.data
   } catch (error) {
     console.error('Error fetching exam:', error)

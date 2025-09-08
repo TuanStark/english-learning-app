@@ -37,12 +37,14 @@ import Link from "next/link"
 import { courseApi, type Course, type CourseLesson } from '@/lib/api'
 
 interface CourseDetailPageProps {
-  // Add any props if needed
+  params: Promise<{
+    id: string
+  }>
 }
 
-export default function CourseDetailPage({}: CourseDetailPageProps) {
-  const params = useParams()
-  const courseId = params?.id as string
+export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
+  const resolvedParams = await params
+  const courseId = resolvedParams.id
   
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)

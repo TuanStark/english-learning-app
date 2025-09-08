@@ -4,14 +4,15 @@ import GrammarDetailClient from './GrammarDetailClient'
 import { grammarApi, type Grammar } from '@/lib/api'
 
 interface GrammarDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: GrammarDetailPageProps): Promise<Metadata> {
   try {
-    const response = await grammarApi.getById(parseInt(params.id))
+    const resolvedParams = await params
+    const response = await grammarApi.getById(parseInt(resolvedParams.id))
     const grammar = response.data
     
     if (!grammar) {
@@ -57,10 +58,11 @@ export async function generateStaticParams() {
 }
 
 export default async function GrammarDetailPage({ params }: GrammarDetailPageProps) {
+  const resolvedParams = await params
   let grammar: Grammar | null = null
   
   try {
-    const response = await grammarApi.getById(parseInt(params.id))
+    const response = await grammarApi.getById(parseInt(resolvedParams.id))
     grammar = response.data
   } catch (error) {
     console.error('Error fetching grammar lesson:', error)

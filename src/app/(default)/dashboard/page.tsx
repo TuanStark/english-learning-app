@@ -270,7 +270,7 @@ export default function DashboardPage() {
         
         const today = new Date()
         let currentStreak = 0
-        let currentDate = new Date(today)
+        const currentDate = new Date(today)
         
         // Check last 30 days for activity
         for (let i = 0; i < 30; i++) {
