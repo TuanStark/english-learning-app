@@ -7,6 +7,7 @@ import { Menu, X, BookOpen, Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UserMenu } from '@/components/auth/user-menu'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 const navigation = [
   { name: 'Trang chủ', href: '/' },
@@ -36,7 +37,7 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <BookOpen className="h-8 w-8 text-blue-600" />
+              <Image src="/images/logorm1.png" alt="EnglishMaster" width={50} height={50} />
               <span className="text-xl font-bold text-gray-900">EnglishMaster</span>
             </Link>
           </div>

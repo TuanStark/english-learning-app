@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { BookOpen, Mail, Phone, MapPin, Github, Twitter, Facebook } from 'lucide-react'
+import Image from 'next/image'
 
 const footerNavigation = {
   main: [
@@ -35,7 +36,7 @@ export default function Footer() {
           {/* Company info */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <BookOpen className="h-8 w-8 text-blue-600" />
+              <Image src="/images/logorm1.png" alt="EnglishMaster" width={50} height={50} />
               <span className="text-xl font-bold text-gray-900">EnglishMaster</span>
             </div>
             <p className="text-gray-600 text-sm mb-4">

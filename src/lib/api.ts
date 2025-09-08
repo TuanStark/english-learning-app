@@ -127,6 +127,7 @@ export interface BlogPost {
   seoDescription?: string;
   viewCount?: number;
   commentCount?: number;
+  tags?: string[];
   author?: any;
   category?: BlogCategory;
   blogComments?: BlogComment[];
@@ -187,6 +188,31 @@ export interface CourseLesson {
   isCompleted: boolean;
   isLocked: boolean;
   order: number;
+}
+
+export interface Exam {
+  id: number;
+  title: string;
+  description?: string;
+  type: 'TOEIC' | 'IELTS' | 'GRAMMAR' | 'VOCABULARY';
+  duration: number;
+  totalQuestions: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  questions?: ExamQuestion[];
+}
+
+export interface ExamQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation?: string;
+  examId: number;
+  exam?: Exam;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // API Client
@@ -368,6 +394,26 @@ class ApiClient {
   async getGrammarStats(): Promise<ApiResponse<any>> {
     return this.request<any>('/dashboard/grammar/stats');
   }
+
+  // Exam API
+  async getExams(params?: any): Promise<ApiResponse<Exam[]>> {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) queryParams.append(key, value.toString());
+      });
+    }
+    const query = queryParams.toString();
+    return this.request<Exam[]>(`/exams${query ? `?${query}` : ''}`);
+  }
+
+  async getExamById(id: number): Promise<ApiResponse<Exam>> {
+    return this.request<Exam>(`/exams/${id}`);
+  }
+
+  async getExamQuestions(examId: number): Promise<ApiResponse<ExamQuestion[]>> {
+    return this.request<ExamQuestion[]>(`/exams/${examId}/questions`);
+  }
 }
 
 // Export singleton instance
@@ -411,4 +457,10 @@ export const dashboardApi = {
   getStats: () => apiClient.getDashboardStats(),
   getVocabularyStats: () => apiClient.getVocabularyStats(),
   getGrammarStats: () => apiClient.getGrammarStats(),
+};
+
+export const examApi = {
+  getAll: (params?: any) => apiClient.getExams(params),
+  getById: (id: number) => apiClient.getExamById(id),
+  getQuestions: (examId: number) => apiClient.getExamQuestions(examId),
 };
