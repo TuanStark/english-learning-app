@@ -46,15 +46,22 @@ export default async function Image() {
               justifyContent: 'center',
             }}
           >
-            <img
-              src="/images/logo.png"
-              alt="English Learning App Logo"
+            <div
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'contain',
+                backgroundColor: '#3B82F6',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '48px',
+                color: 'white',
+                fontWeight: 'bold',
               }}
-            />
+            >
+              E
+            </div>
           </div>
           <div
             style={{

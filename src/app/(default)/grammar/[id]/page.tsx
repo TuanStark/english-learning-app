@@ -45,17 +45,17 @@ export async function generateMetadata({ params }: GrammarDetailPageProps): Prom
   }
 }
 
-export async function generateStaticParams() {
-  try {
-    const response = await grammarApi.getAll()
-    return response.data.data.map((grammar: Grammar) => ({
-      id: grammar.id.toString(),
-    }))
-  } catch (error) {
-    console.error('Error generating static params for grammar:', error)
-    return []
-  }
-}
+// export async function generateStaticParams() {
+//   try {
+//     const response = await grammarApi.getAll()
+//     return response.data.data.map((grammar: Grammar) => ({
+//       id: grammar.id.toString(),
+//     }))
+//   } catch (error) {
+//     console.error('Error generating static params for grammar:', error)
+//     return []
+//   }
+// }
 
 export default async function GrammarDetailPage({ params }: GrammarDetailPageProps) {
   const resolvedParams = await params

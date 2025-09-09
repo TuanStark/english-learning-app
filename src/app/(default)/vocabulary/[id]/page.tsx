@@ -46,17 +46,17 @@ export async function generateMetadata({ params }: VocabularyDetailPageProps): P
   }
 }
 
-export async function generateStaticParams() {
-  try {
-    const topics = await vocabularyApi.getTopics()
-    return topics.data.data.map((topic: VocabularyTopic) => ({
-      id: topic.id.toString(),
-    }))
-  } catch (error) {
-    console.error('Error generating static params for vocabulary:', error)
-    return []
-  }
-}
+// export async function generateStaticParams() {
+//   try {
+//     const topics = await vocabularyApi.getTopics()
+//     return topics.data.data.map((topic: VocabularyTopic) => ({
+//       id: topic.id.toString(),
+//     }))
+//   } catch (error) {
+//     console.error('Error generating static params for vocabulary:', error)
+//     return []
+//   }
+// }
 
 export default async function VocabularyDetailPage({ params }: VocabularyDetailPageProps) {
   const resolvedParams = await params

@@ -43,17 +43,17 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
   }
 }
 
-export async function generateStaticParams() {
-  try {
-    const response = await blogApi.getAll()
-    return response.data.map((post: BlogPost) => ({
-      id: post.id.toString(),
-    }))
-  } catch (error) {
-    console.error('Error generating static params for blog:', error)
-    return []
-  }
-}
+// export async function generateStaticParams() {
+//   try {
+//     const response = await blogApi.getAll()
+//     return response.data.map((post: BlogPost) => ({
+//       id: post.id.toString(),
+//     }))
+//   } catch (error) {
+//     console.error('Error generating static params for blog:', error)
+//     return []
+//   }
+// }
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const resolvedParams = await params

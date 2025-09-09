@@ -21,15 +21,22 @@ export default function Icon() {
           backgroundColor: '#f8fafc',
         }}
       >
-        <img
-          src="/images/logo.png"
-          alt="English Learning App"
+        <div
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'contain',
+            backgroundColor: '#3B82F6',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '16px',
+            color: 'white',
+            fontWeight: 'bold',
           }}
-        />
+        >
+          E
+        </div>
       </div>
     ),
     {
