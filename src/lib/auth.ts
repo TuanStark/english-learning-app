@@ -46,6 +46,7 @@ const clearUserData = () => {
 }
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   providers: [
     CredentialsProvider({
       name: "credentials",

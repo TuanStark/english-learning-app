@@ -2,39 +2,18 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import Pagination from "@/components/Pagination"
 import usePagination from "@/hooks/usePagination"
 import useSWR from "swr"
 import { 
-  Search, 
-  Filter, 
   BookOpen, 
-  Users, 
   Star, 
-  Clock, 
-  Play,
-  Sparkles,
   Brain,
-  Zap,
   Target,
-  GraduationCap,
-  Heart,
-  Crown,
-  TrendingUp,
   Award,
-  Globe,
-  Lightbulb,
-  Rocket,
-  Eye,
-  ArrowRight,
-  CheckCircle,
   MessageCircle,
-  BookMarked,
-  Flame,
-  User,
   Home,
   ChevronRight
 } from "lucide-react"
@@ -44,7 +23,6 @@ import { blogApi } from '@/lib/api'
 export default function BlogClient() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
-  const [hoveredPost, setHoveredPost] = useState<number | null>(null)
   
   // Use pagination hook
   const { page, limit, setPage } = usePagination('/blog', 6, 1);
@@ -80,7 +58,6 @@ export default function BlogClient() {
 
   // Transform data
   const blogPosts = Array.isArray((data as any)?.data) ? (data as any).data : [];
-  console.log('blogPosts', blogPosts)
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
   // Get pagination info from backend
@@ -90,9 +67,6 @@ export default function BlogClient() {
   useEffect(() => {
     setPage(1)
   }, [searchTerm, selectedCategory])
-
-  // Get unique category names for filter
-  const categoryNames = ["all", ...(categories.map(cat => cat.categoryName) || [])]
 
 
   const getCategoryColor = (category: string) => {

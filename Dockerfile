@@ -11,6 +11,12 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Set environment variables for build
+ENV NEXT_PUBLIC_BACKEND_URL=http://10.0.0.5:3005
+ENV NEXT_PUBLIC_AI_URL=http://10.0.0.5:3005
+ENV NEXT_PUBLIC_SITE_URL=http://10.0.0.5:3005
+
 RUN npm run build -- --no-lint
 
 
