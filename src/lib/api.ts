@@ -1,7 +1,7 @@
 import { ExamAttempt } from "@/types/global-type";
 
 // API service layer for integrating with NestJS backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
 
 // Common response types
 export interface ApiResponse<T> {
@@ -464,6 +464,20 @@ class ApiClient {
       body: JSON.stringify({ token, password }),
     });
   }
+
+  async checkCode(codeId: string, userId: number): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/check-code', {
+      method: 'POST',
+      body: JSON.stringify({ codeId, id: userId.toString() }),
+    });
+  }
+
+  async resendCode(userId: number, email: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/resend-code', {
+      method: 'POST',
+      body: JSON.stringify({ id: userId.toString(), email }),
+    });
+  }
 }
 
 // Export singleton instance
@@ -523,6 +537,8 @@ export const authApi = {
   refreshToken: (refreshToken: string) => apiClient.refreshToken(refreshToken),
   forgotPassword: (email: string) => apiClient.forgotPassword(email),
   resetPassword: (token: string, password: string) => apiClient.resetPassword(token, password),
+  checkCode: (codeId: string, userId: number) => apiClient.checkCode(codeId, userId),
+  resendCode: (userId: number, email: string) => apiClient.resendCode(userId, email),
 };
 
 // Error class

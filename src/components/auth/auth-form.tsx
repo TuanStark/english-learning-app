@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import EmailVerificationPopup from './email-verification-popup'
 import { 
   Eye, 
   EyeOff, 
@@ -51,6 +52,17 @@ export default function AuthForm({ type }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showVerificationPopup, setShowVerificationPopup] = useState(false)
+  const [registeredUser, setRegisteredUser] = useState<{ email: string; id: number } | null>(null)
+
+  // Test function để hiển thị popup
+  const testPopup = () => {
+    setRegisteredUser({
+      email: "tuansmart472004@gmail.com",
+      id: 16
+    })
+    setShowVerificationPopup(true)
+  }
 
   const isLogin = type === 'login'
   const title = isLogin ? 'Đăng nhập' : 'Đăng ký'
@@ -98,6 +110,7 @@ export default function AuthForm({ type }: AuthFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Form submitted!', { type, formData })
     
     if (!validateForm()) return
 
@@ -122,24 +135,40 @@ export default function AuthForm({ type }: AuthFormProps) {
           window.location.href = '/dashboard'
         }
       } else {
-        // For demo, auto-login after register
-        const result = await signIn('credentials', {
-          email: formData.email,
-          password: formData.password,
-          redirect: false,
+        // Register with backend API
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            fullName: formData.name
+          }),
         })
 
-        if (result?.error) {
-          setErrors({ 
-            general: 'Có lỗi xảy ra. Vui lòng thử lại.'
+        const data = await response.json()
+        console.log('Register response:', data)
+
+        if (response.ok && data.statusCode === 201) {
+          // Show verification popup
+          console.log('Setting registered user:', { email: formData.email, id: data.data.id })
+          setRegisteredUser({
+            email: formData.email,
+            id: data.data.id
           })
+          setShowVerificationPopup(true)
+          console.log('Popup should be visible now')
         } else {
-          // Redirect to dashboard on success
-          window.location.href = '/dashboard'
+          setErrors({ 
+            general: data.message || 'Có lỗi xảy ra. Vui lòng thử lại.'
+          })
         }
       }
       
-    } catch {
+    } catch (error) {
+      console.error('Auth error:', error)
       setErrors({ 
         general: isLogin 
           ? 'Email hoặc mật khẩu không đúng' 
@@ -155,6 +184,24 @@ export default function AuthForm({ type }: AuthFormProps) {
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const handleVerificationSuccess = async () => {
+    // Auto login after successful verification
+    const result = await signIn('credentials', {
+      email: formData.email,
+      password: formData.password,
+      redirect: false,
+    })
+
+    if (result?.error) {
+      setErrors({ 
+        general: 'Xác thực thành công!. Vui lòng đăng nhập thủ công.'
+      })
+    } else {
+      // Redirect to dashboard on success
+      window.location.href = '/dashboard'
     }
   }
 
@@ -428,6 +475,18 @@ export default function AuthForm({ type }: AuthFormProps) {
                   </>
                 )}
               </Button>
+
+              {/* Test popup button - chỉ hiện khi register */}
+              {!isLogin && (
+                <Button
+                  type="button"
+                  onClick={testPopup}
+                  variant="outline"
+                  className="w-full h-10 text-sm"
+                >
+                  🧪 Test Popup (ID: 16)
+                </Button>
+              )}
             </form>
 
             {/* Switch between login/register */}
@@ -440,6 +499,17 @@ export default function AuthForm({ type }: AuthFormProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email Verification Popup */}
+      {registeredUser && (
+        <EmailVerificationPopup
+          open={showVerificationPopup}
+          onOpenChange={setShowVerificationPopup}
+          email={registeredUser.email}
+          userId={registeredUser.id}
+          onVerificationSuccess={handleVerificationSuccess}
+        />
+      )}
     </div>
   )
 }

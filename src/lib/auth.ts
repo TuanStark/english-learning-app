@@ -5,7 +5,7 @@ import GoogleProvider from "next-auth/providers/google"
 import FacebookProvider from "next-auth/providers/facebook"
 
 // API endpoints
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001'
 const LOGIN_ENDPOINT = `${API_BASE_URL}/auth/login`
 const PROFILE_ENDPOINT = `${API_BASE_URL}/user/profile`
 

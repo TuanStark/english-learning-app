@@ -19,24 +19,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default function DefaultLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className="scroll-smooth">
-      <body className={`${inter.className} antialiased`}>
-        <div className="flex flex-col min-h-screen">
-          <Navbar />
-          <main className="flex-1">
-            <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div></div>}>
-              {children}
-            </Suspense>
-          </main>
-          <Footer />
-        </div>
-      </body>
-    </html>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-1">
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div></div>}>
+          {children}
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
   );
 }

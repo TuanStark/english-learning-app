@@ -14,7 +14,7 @@ COPY . .
 
 # Set environment variables for build
 ENV NEXT_PUBLIC_BACKEND_URL=http://10.0.0.5:3005
-ENV NEXT_PUBLIC_AI_URL=http://10.0.0.5:3005
+ENV NEXT_PUBLIC_AI_URL=http://10.0.0.6:3000
 ENV NEXT_PUBLIC_SITE_URL=http://10.0.0.5:3005
 
 RUN npm run build -- --no-lint

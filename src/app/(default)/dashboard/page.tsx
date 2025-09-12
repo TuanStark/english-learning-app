@@ -117,13 +117,13 @@ export default function DashboardPage() {
     setIsLoadingData(true)
     try {
       // Fetch exam stats from existing endpoint
-      const examStatsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exam-attempts/user/${user.id}/stats`)
+      const examStatsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001'}/exam-attempts/user/${user.id}/stats`)
       if (examStatsResponse.ok) {
         const examStatsData = await examStatsResponse.json()
         const examStats = examStatsData.data
         
         // Calculate total learning time from exam attempts
-        const examAttemptsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exam-attempts/user/${user.id}`)
+        const examAttemptsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001'}/exam-attempts/user/${user.id}`)
         if (examAttemptsResponse.ok) {
           const examAttemptsData = await examAttemptsResponse.json()
           const examAttempts = examAttemptsData.data || []
@@ -176,7 +176,7 @@ export default function DashboardPage() {
       }
 
       // Fetch vocabulary progress stats
-      const vocabStatsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user-vocabularies-progress/user/${user.id}/stats`)
+      const vocabStatsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001'}/user-vocabularies-progress/user/${user.id}/stats`)
       if (vocabStatsResponse.ok) {
         const vocabStatsData = await vocabStatsResponse.json()
         const vocabStats = vocabStatsData.data
@@ -194,7 +194,7 @@ export default function DashboardPage() {
       }
 
       // Fetch grammar progress stats
-      const grammarStatsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user-grammar-progress/user/${user.id}/stats`)
+      const grammarStatsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001'}/user-grammar-progress/user/${user.id}/stats`)
       if (grammarStatsResponse.ok) {
         const grammarStatsData = await grammarStatsResponse.json()
         const grammarStats = grammarStatsData.data
@@ -212,7 +212,7 @@ export default function DashboardPage() {
       }
 
       // Fetch recent activities (exam attempts)
-      const recentExamsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exam-attempts/user/${user.id}`)
+      const recentExamsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001'}/exam-attempts/user/${user.id}`)
       if (recentExamsResponse.ok) {
         const recentExamsData = await recentExamsResponse.json()
         const recentExams = recentExamsData.data || []
@@ -263,7 +263,7 @@ export default function DashboardPage() {
   const calculateLearningStreak = async (userId: string | number): Promise<number> => {
     try {
       // Get exam attempts from last 30 days
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/exam-attempts/user/${userId}`)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001'}/exam-attempts/user/${userId}`)
       if (response.ok) {
         const data = await response.json()
         const attempts = data.data || []

@@ -11,12 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Mail, Lock, User, Chrome, Facebook, AlertCircle, CheckCircle } from "lucide-react"
 import { authApi, ApiError } from "@/lib/api"
+import EmailVerificationPopup from "@/components/auth/email-verification-popup"
 
 function AuthContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [showVerificationPopup, setShowVerificationPopup] = useState(false)
+  const [registeredUser, setRegisteredUser] = useState<{ email: string; id: number; password: string } | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams?.get("callbackUrl") || "/"
@@ -99,7 +102,13 @@ function AuthContent() {
       const result = await authApi.register(apiData)
       console.log("Registration result:", result)
       
-      setSuccess("Đăng ký thành công! Vui lòng đăng nhập.")
+      // Show verification popup
+      setRegisteredUser({
+        email: registerData.email,
+        id: result.data.id,
+        password: registerData.password
+      })
+      setShowVerificationPopup(true)
       
       // Reset form
       setRegisterData({
@@ -140,6 +149,29 @@ function AuthContent() {
       setError("Có lỗi xảy ra khi đăng nhập")
       setIsLoading(false)
     }
+  }
+
+  const handleVerificationSuccess = async () => {
+    // Show success message
+    setSuccess('Xác thực email thành công! Đang chuyển đến trang đăng nhập...')
+    setShowVerificationPopup(false)
+    
+    // Auto-fill login form
+    if (registeredUser) {
+      setLoginData({
+        email: registeredUser.email,
+        password: registeredUser.password
+      })
+    }
+    
+    // Switch to login tab
+    const loginTab = document.querySelector('[value="login"]') as HTMLElement
+    if (loginTab) {
+      loginTab.click()
+    }
+    
+    // Clear registered user data
+    setRegisteredUser(null)
   }
 
   return (
@@ -338,6 +370,17 @@ function AuthContent() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email Verification Popup */}
+      {registeredUser && (
+        <EmailVerificationPopup
+          open={showVerificationPopup}
+          onOpenChange={setShowVerificationPopup}
+          email={registeredUser.email}
+          userId={registeredUser.id}
+          onVerificationSuccess={handleVerificationSuccess}
+        />
+      )}
     </div>
   )
 }
